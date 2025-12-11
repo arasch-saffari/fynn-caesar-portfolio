@@ -11,7 +11,8 @@ export enum EntityType {
   ENEMY_MUSIC = 'ENEMY_MUSIC',
   ENEMY_BAND = 'ENEMY_BAND',
   BOSS_MAIL = 'BOSS_MAIL',
-  PARTICLE = 'PARTICLE'
+  PARTICLE = 'PARTICLE',
+  FLOATING_TEXT = 'FLOATING_TEXT'
 }
 
 export type Entity = {
@@ -21,13 +22,16 @@ export type Entity = {
   velocity: Vector2;
   size: number;
   health: number;
-  maxHealth?: number; // Added for health bar calculation if needed later
+  maxHealth?: number; 
   color: string;
   rotation?: number;
   // Visual FX properties
-  trail?: Vector2[]; // Stores previous positions for light trails
-  hitFlash?: number; // Timer for white flash on impact
-  wobbleOffset?: number; // Random offset for floating animation
+  trail?: Vector2[]; 
+  hitFlash?: number; 
+  wobbleOffset?: number;
+  // Text property for FloatingText entities
+  text?: string; 
+  opacity?: number;
 };
 
 export type GameState = 'INTRO' | 'PLAYING' | 'MODAL_OPEN' | 'MENU_OPEN' | 'GAME_OVER' | 'WIN';

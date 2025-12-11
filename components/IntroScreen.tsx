@@ -84,7 +84,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
           <h1 className="flex flex-col items-center leading-[0.85] tracking-tighter">
             {/* Top Line */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-pink-300 via-white to-pink-500 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]">
-              FYNN-
+              FYNN
             </span>
             {/* Bottom Line */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-t from-pink-500 via-white to-pink-300 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]" style={{ animationDelay: '0.5s' }}>
@@ -104,25 +104,25 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
             
             {/* Instructions Grid */}
             <div className="grid grid-cols-3 gap-4 text-center items-start">
-                {/* Step 1: Move */}
+                {/* Step 1: Aim (Updated from Dodge) */}
                 <div className="flex flex-col items-center gap-3 group">
                     <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
                         <Gamepad2 className="w-6 h-6 md:w-8 md:h-8 text-cyan-400 group-hover:scale-110 transition-transform animate-pulse" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">DODGE & FLY</span>
-                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">USE ARROWS / TOUCH</span>
+                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">AIM & LOOK</span>
+                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">MOUSE / TOUCH</span>
                     </div>
                 </div>
 
-                {/* Step 2: Shoot */}
+                {/* Step 2: Shoot (Clarified controls) */}
                 <div className="flex flex-col items-center gap-3 group">
                     <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
                         <Zap className="w-6 h-6 md:w-8 md:h-8 text-pink-500 fill-current group-hover:scale-110 transition-transform animate-bounce" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">SHOOT LOVE</span>
-                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">HIT TARGETS</span>
+                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">SEND LOVE</span>
+                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">CLICK / SPACE</span>
                     </div>
                 </div>
 
@@ -132,7 +132,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
                         <LockOpen className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">UNLOCK ART</span>
+                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">UNLOCK MEMORIES</span>
                         <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">DISCOVER PROJECTS</span>
                     </div>
                 </div>

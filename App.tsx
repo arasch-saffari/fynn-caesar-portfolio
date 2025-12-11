@@ -17,6 +17,9 @@ const App: React.FC = () => {
   
   // Track which artifacts have been collected
   const [collectedItems, setCollectedItems] = useState<EntityType[]>([]);
+  
+  // Lifted score state
+  const [currentScore, setCurrentScore] = useState(0);
 
   const handleStart = useCallback(() => {
     setGameState('PLAYING');
@@ -25,6 +28,7 @@ const App: React.FC = () => {
   const handleReplay = useCallback(() => {
       setGameKey(prev => prev + 1);
       setCollectedItems([]);
+      setCurrentScore(0);
       setGameState('PLAYING');
   }, []);
 
@@ -68,6 +72,7 @@ const App: React.FC = () => {
             onOpenContent={handleOpenContent}
             onItemCollected={handleItemCollected}
             collectedItems={collectedItems}
+            onScoreUpdate={setCurrentScore}
           />
       </div>
 
@@ -78,6 +83,7 @@ const App: React.FC = () => {
         onOpenContent={handleOpenContent}
         onReplay={handleReplay}
         collectedItems={collectedItems}
+        score={currentScore}
       />
 
       {gameState === 'INTRO' && <IntroScreen onStart={handleStart} />}
