@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Menu, Mail, X, Gamepad2, Headphones, Palette, Users, RefreshCcw } from 'lucide-react';
+import { Menu, Mail, X, Gamepad2, Headphones, Palette, Users, RefreshCcw, Heart } from 'lucide-react';
 import { EntityType, GameState } from '../types';
 
 interface UIOverlayProps {
@@ -58,14 +58,19 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
         
         {/* Top Bar: Progress & Menu */}
         <div className="flex justify-between items-start w-full">
-          {/* Top Left: Stats - Text Only Version */}
-          <div className="flex flex-col gap-1 md:gap-2 pointer-events-auto bg-black/80 backdrop-blur-md p-2 md:p-3 rounded-lg border-2 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)] transform hover:scale-105 transition-transform max-w-[60vw]">
-             <div className="flex items-center justify-center gap-2 mb-1 border-b border-pink-500/50 pb-1">
-                 <span className="text-[10px] md:text-xs font-pixel text-pink-300 whitespace-nowrap">SCORE</span>
+          
+          {/* Top Left: LOVE SCORE - 90s Rave Style */}
+          <div className="pointer-events-auto flex flex-col items-start select-none filter drop-shadow-[3px_3px_0_rgba(0,0,0,0.8)]">
+             {/* Header */}
+             <div className="flex items-center gap-2 mb-1 pl-1">
+                 <Heart className="w-3 h-3 md:w-4 md:h-4 text-pink-500 fill-pink-500 animate-pulse" />
+                 <span className="font-pixel text-[10px] md:text-xs text-pink-400 tracking-[0.2em] uppercase" style={{ textShadow: '0 0 10px rgba(236, 72, 153, 0.8)' }}>
+                    LOVE SCORE
+                 </span>
              </div>
              
-             {/* Score Counter */}
-             <div className="font-terminal text-xl md:text-3xl text-white tracking-widest leading-none text-center">
+             {/* The Numbers - Gradient Fill & Bold */}
+             <div className="font-pixel text-3xl md:text-5xl tracking-widest leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-pink-200 to-pink-600" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)' }}>
                  {score.toString().padStart(6, '0')}
              </div>
           </div>
