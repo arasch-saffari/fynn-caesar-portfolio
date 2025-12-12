@@ -111,7 +111,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
             {/* Mobile/Tablet Controls Hint - Visible below lg breakpoint */}
             <div className="block lg:hidden">
                  <div className="font-pixel text-[10px] text-cyan-300 animate-pulse whitespace-nowrap">
-                     TOUCH & DRAG
+                     TAP TO FIRE
                  </div>
             </div>
           </div>
