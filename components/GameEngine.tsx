@@ -15,8 +15,10 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Track logical dimensions (CSS pixels)
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
+  
+  // OPTIMIZATION: Use refs for high-frequency game logic variables to prevent React re-renders from tearing down the game loop.
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
   
   // Calculate a scale factor for the game world based on width
   const getGameScale = (w: number) => {
@@ -30,11 +32,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   };
   
   const gameScale = getGameScale(dimensions.width);
-
-  // Sync local score to parent
-  useEffect(() => {
-      onScoreUpdate(score);
-  }, [score, onScoreUpdate]);
   
   // Handle Window Resize with Debounce and Logic Updates
   useEffect(() => {
@@ -210,9 +207,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   const updateCombo = () => {
       const now = Date.now();
       if (now - lastHitTime.current < 1500) { 
-          setCombo(c => Math.min(c + 1, 99));
+          comboRef.current = Math.min(comboRef.current + 1, 99);
       } else {
-          setCombo(1);
+          comboRef.current = 1;
       }
       lastHitTime.current = now;
   };
@@ -269,8 +266,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
         if (muzzleFlash.current > 0) muzzleFlash.current--;
 
-        if (Date.now() - lastHitTime.current > 1500 && combo > 0) {
-            setCombo(0);
+        if (Date.now() - lastHitTime.current > 1500 && comboRef.current > 0) {
+            comboRef.current = 0;
         }
 
         if (gameState !== 'PLAYING' && gameState !== 'WIN') return;
@@ -542,14 +539,16 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                         createExplosion(proj.position.x, proj.position.y, '#fff', 5, 5);
                         
                         const hitPoints = 303;
-                        setScore(s => s + hitPoints);
+                        scoreRef.current += hitPoints;
+                        onScoreUpdate(scoreRef.current); // Sync with UI
+                        
                         spawnFloatingText(enemy.position.x, enemy.position.y - (20 * gameScale), `${hitPoints}`, '#fff', gameScale);
 
                         if (enemy.health <= 0) {
                             createExplosion(enemy.position.x, enemy.position.y, enemy.color, 30, 12);
                             onItemCollected(enemy.type); 
                             onOpenContent(enemy.type);
-                            // REMOVED: setScore(s => s + 1000 * (combo || 1));
+                            
                             spawnFloatingText(enemy.position.x, enemy.position.y - (40 * gameScale), "NICE!", enemy.color, gameScale);
                         }
                     }
@@ -557,7 +556,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             });
             
             const enemiesAlive = entities.current.filter(e => e.type.includes('ENEMY')).length;
-            if (enemiesAlive === 0 && !winSequenceStarted.current && score > 0) {
+            if (enemiesAlive === 0 && !winSequenceStarted.current && scoreRef.current > 0) {
                  if (collectedItems.length === 3) {
                      triggerWinSequence();
                  }
@@ -864,7 +863,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     }
 
     return () => cancelAnimationFrame(frameId.current);
-  }, [gameState, onOpenContent, triggerWinSequence, onItemCollected, collectedItems, combo, onScoreUpdate, dimensions, gameScale]);
+    // REMOVED 'combo' and 'score' from dependency array to prevent loop restart.
+  }, [gameState, onOpenContent, triggerWinSequence, onItemCollected, collectedItems, onScoreUpdate, dimensions, gameScale]);
 
   // Handle Input Mapping
   const handleUpdateInput = (clientX: number, clientY: number) => {
