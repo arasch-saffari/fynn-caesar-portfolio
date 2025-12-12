@@ -11,7 +11,7 @@ export const ENEMY_SPEED = 2;
 export const CONTENT_MAP: Record<string, ContentData> = {
   [EntityType.ENEMY_ILLUSTRATION]: {
     title: "ILLUSTRATION",
-    description: "Psychedelic ink. Permanent trippy visuals. Cologne based.",
+    description: "Permanent trippy visuals.",
     style: "illustration",
     links: [
       { label: "INSTAGRAM", url: "https://www.instagram.com/candyflip.tattoos/" }

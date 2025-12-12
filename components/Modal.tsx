@@ -63,6 +63,16 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
       setTimeout(() => setCopied(false), 2000);
   };
 
+  // Helper to determine subtitle text
+  const getSubtitle = () => {
+      if (data.style === 'band') return 'D.I.Y. Acid Folk';
+      if (data.style === 'illustration') return 'PSYCHODELIC INK';
+      return 'DATA DECODED';
+  };
+
+  // Helper to determine if subtitle should be large
+  const isLargeSubtitle = data.style === 'band' || data.style === 'illustration';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300"
          style={{
@@ -88,8 +98,8 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                 <h2 className={`text-lg md:text-3xl text-center glitch-effect ${textColor} mb-2 uppercase tracking-widest font-bold`}>
                 {data.title}
                 </h2>
-                <div className={`font-terminal uppercase ${accentColor} ${data.style === 'band' ? 'text-sm md:text-xl tracking-[0.2em] font-bold mt-1' : 'text-[10px] tracking-[0.5em] opacity-70'}`}>
-                    {data.style === 'band' ? 'D.I.Y. Acid Folk' : 'DATA DECODED'}
+                <div className={`font-terminal uppercase ${accentColor} ${isLargeSubtitle ? 'text-sm md:text-xl tracking-[0.2em] font-bold mt-1' : 'text-[10px] tracking-[0.5em] opacity-70'}`}>
+                    {getSubtitle()}
                 </div>
             </div>
              <div className="w-full h-0.5 bg-current opacity-50 mt-4" />
