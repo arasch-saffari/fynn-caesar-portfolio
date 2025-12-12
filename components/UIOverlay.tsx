@@ -101,7 +101,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
             {/* Mobile Controls Hint */}
             <div className="block md:hidden">
                  <div className="font-pixel text-[8px] md:text-[10px] text-pink-300 animate-pulse">
-                     TOUCH & DRAG
+                     TAP TO FIRE
                  </div>
             </div>
           </div>
