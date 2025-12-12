@@ -425,7 +425,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                          entity.velocity.y *= 1.1;
                     }
                     
-                    entity.rotation += (Math.random() - 0.5) * 0.1;
+                    // FIXED: Handle optional rotation correctly for TypeScript strict mode
+                    const currentRotation = entity.rotation || 0;
+                    entity.rotation = currentRotation + (Math.random() - 0.5) * 0.1;
                 }
             }
         });

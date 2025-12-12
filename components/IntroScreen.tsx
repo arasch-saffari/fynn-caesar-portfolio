@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Gamepad2, Heart, LockOpen } from 'lucide-react';
+import { Target, Gamepad2, Heart, Unlock } from 'lucide-react';
 
 interface IntroScreenProps {
   onStart: () => void;
@@ -181,7 +181,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
                 {/* Step 3: Unlock */}
                 <div className="flex flex-col items-center gap-3 md:gap-4 group">
                      <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
-                        <LockOpen className="w-6 h-6 md:w-10 md:h-10 text-yellow-400 group-hover:scale-110 transition-transform" />
+                        <Unlock className="w-6 h-6 md:w-10 md:h-10 text-yellow-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col">
                         <span className="font-pixel text-[10px] md:text-sm text-white mb-2">UNLOCK MEMORIES</span>
