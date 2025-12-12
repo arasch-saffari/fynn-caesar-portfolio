@@ -100,7 +100,8 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                     <h2 className="text-white text-lg md:text-xl tracking-widest">{legalTitle}</h2>
                     <button 
                         onClick={() => setActiveLegalDoc(null)}
-                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                        className="p-3 -mr-2 hover:bg-white/20 rounded transition-colors"
+                        aria-label="Close Legal"
                     >
                         <X className="w-6 h-6 text-white" />
                     </button>
@@ -133,11 +134,11 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
         {/* Header - Fixed at top */}
         <div className="relative p-6 pb-2 shrink-0 z-10 bg-inherit">
             <button 
-            onClick={onClose}
-            className={`absolute top-2 right-2 p-2 hover:bg-white/20 transition-colors z-20 rounded ${textColor}`}
-            aria-label="Close"
+                onClick={onClose}
+                className={`absolute top-2 right-2 p-3 hover:bg-white/20 transition-colors z-20 rounded ${textColor}`}
+                aria-label="Close Modal"
             >
-            <X className="w-6 h-6" />
+                <X className="w-6 h-6" />
             </button>
 
             <div className="flex flex-col items-center">
@@ -197,14 +198,14 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                     <div className={`flex flex-wrap gap-4 md:gap-6 mt-4 pt-4 border-t ${borderColor} w-full justify-center opacity-70`}>
                         <button 
                             onClick={() => setActiveLegalDoc('impressum')}
-                            className={`group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:${textColor} transition-colors uppercase tracking-widest`}
+                            className={`group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:${textColor} transition-colors uppercase tracking-widest p-2`}
                         >
                             <Scale className="w-3 h-3" />
                             <span className="group-hover:underline underline-offset-4">Impressum</span>
                         </button>
                         <button 
                             onClick={() => setActiveLegalDoc('privacy')}
-                            className={`group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:${textColor} transition-colors uppercase tracking-widest`}
+                            className={`group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:${textColor} transition-colors uppercase tracking-widest p-2`}
                         >
                             <Shield className="w-3 h-3" />
                             <span className="group-hover:underline underline-offset-4">Datenschutz</span>
@@ -224,7 +225,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                             href={link.url}
                             target="_blank"
                             rel="noreferrer"
-                            className={`group flex items-center justify-between p-3 md:p-4 border-2 ${borderColor} ${buttonHover} transition-all uppercase tracking-wider text-xs md:text-base ${textColor} hover:scale-[1.02] active:scale-95 shadow-lg bg-black/50`}
+                            className={`group flex items-center justify-between p-4 border-2 ${borderColor} ${buttonHover} transition-all uppercase tracking-wider text-xs md:text-base ${textColor} hover:scale-[1.02] active:scale-95 shadow-lg bg-black/50`}
                         >
                             <span className="font-bold flex items-center gap-2">
                                 <PlayCircle className="w-4 h-4 md:w-5 md:h-5 opacity-0 group-hover:opacity-100 transition-opacity" />

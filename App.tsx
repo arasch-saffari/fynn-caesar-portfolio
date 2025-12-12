@@ -1,11 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import GameEngine from './components/GameEngine';
+import React, { useState, useCallback, Suspense, lazy } from 'react';
 import IntroScreen from './components/IntroScreen';
 import CRTOverlay from './components/CRTOverlay';
 import Modal from './components/Modal';
 import UIOverlay from './components/UIOverlay';
+import LoadingSpinner from './components/LoadingSpinner';
 import { GameState, EntityType } from './types';
 import { CONTENT_MAP } from './constants';
+
+// OPTIMIZATION: Lazy load the heavy GameEngine so IntroScreen loads instantly
+const GameEngine = lazy(() => import('./components/GameEngine'));
+
+// OPTIMIZATION: Memoize GameEngine to prevent re-renders when only UI state (score) changes
+const MemoizedGameEngine = React.memo(GameEngine);
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('INTRO');
@@ -32,11 +38,11 @@ const App: React.FC = () => {
       setGameState('PLAYING');
   }, []);
 
-  const handleOpenContent = (type: EntityType) => {
-    setPreviousState(gameState === 'MENU_OPEN' ? 'PLAYING' : gameState);
+  const handleOpenContent = useCallback((type: EntityType) => {
+    setPreviousState(current => current === 'MENU_OPEN' ? 'PLAYING' : current);
     setGameState('MODAL_OPEN');
     setActiveContent(type);
-  };
+  }, []);
 
   const handleCloseModal = () => {
     // Check win condition
@@ -46,9 +52,6 @@ const App: React.FC = () => {
     const allCollected = hasIllustration && hasMusic && hasBand;
 
     if (allCollected) {
-        // LOGIC FIX:
-        // If we are closing the Contact/Boss Mail modal (e.g. from "Send Love"), go to System Menu.
-        // If we are closing a regular item modal (just finished the game), go to Win Screen.
         if (activeContent === EntityType.BOSS_MAIL) {
              setGameState('MENU_OPEN');
         } else {
@@ -60,39 +63,38 @@ const App: React.FC = () => {
     setActiveContent(null);
   };
   
-  const handleItemCollected = (type: EntityType) => {
+  const handleItemCollected = useCallback((type: EntityType) => {
       setCollectedItems(prev => {
           if (prev.includes(type)) return prev;
           return [...prev, type];
       });
-  };
+  }, []);
 
-  const handleToggleMenu = () => {
-    if (gameState === 'MENU_OPEN') {
-      // If we toggle menu off, check if we should go back to WIN/Menu loop or Playing
-      const hasIllustration = collectedItems.includes(EntityType.ENEMY_ILLUSTRATION);
-      const hasMusic = collectedItems.includes(EntityType.ENEMY_MUSIC);
-      const hasBand = collectedItems.includes(EntityType.ENEMY_BAND);
-      const allCollected = hasIllustration && hasMusic && hasBand;
+  const handleToggleMenu = useCallback(() => {
+    setGameState(current => {
+      if (current === 'MENU_OPEN') {
+        const hasIllustration = collectedItems.includes(EntityType.ENEMY_ILLUSTRATION);
+        const hasMusic = collectedItems.includes(EntityType.ENEMY_MUSIC);
+        const hasBand = collectedItems.includes(EntityType.ENEMY_BAND);
+        const allCollected = hasIllustration && hasMusic && hasBand;
 
-      if (allCollected) {
-           setGameState('WIN'); 
+        if (allCollected) return 'WIN';
+        return previousState;
       } else {
-           setGameState(previousState);
+        setPreviousState(current);
+        return 'MENU_OPEN';
       }
-    } else {
-      setPreviousState(gameState);
-      setGameState('MENU_OPEN');
-    }
-  };
+    });
+  }, [collectedItems, previousState]);
 
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden select-none">
       <CRTOverlay />
 
-      {/* Main Game Layer - Key forces remount on replay */}
+      {/* Main Game Layer - Wrapped in Suspense for Lazy Loading */}
       <div className="absolute inset-0 z-0">
-          <GameEngine 
+        <Suspense fallback={<LoadingSpinner />}>
+          <MemoizedGameEngine 
             key={gameKey}
             gameState={gameState} 
             setGameState={setGameState} 
@@ -101,6 +103,7 @@ const App: React.FC = () => {
             collectedItems={collectedItems}
             onScoreUpdate={setCurrentScore}
           />
+        </Suspense>
       </div>
 
       {/* UI Layers */}

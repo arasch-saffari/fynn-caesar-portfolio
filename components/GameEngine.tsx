@@ -13,40 +13,40 @@ interface GameEngineProps {
 
 const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpenContent, onItemCollected, collectedItems, onScoreUpdate }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // Track logical dimensions (CSS pixels)
-  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   
-  // OPTIMIZATION: Use refs for high-frequency game logic variables to prevent React re-renders from tearing down the game loop.
+  // Track dimensions
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const isMobileRef = useRef(window.innerWidth < 768);
+  
+  // OPTIMIZATION: Use refs for high-frequency logic
   const scoreRef = useRef(0);
   const comboRef = useRef(0);
   
-  // Calculate a scale factor for the game world based on width
+  // Calculate game scale
   const getGameScale = (w: number) => {
-      if (w < 600) return 0.8; // Mobile: DO NOT CHANGE
-      
-      // Desktop/Tablet:
-      if (w < 1440) return 1.0;
-      
-      // Very gentle scaling for large screens:
-      return 1.0 + (w - 1440) / 3000; 
+      if (w < 600) return 0.8; // Mobile
+      if (w < 1440) return 1.0; // Laptop/Desktop
+      return Math.min(1.5, 1.0 + (w - 1440) / 3000); // Capped scaling for ultrawide
   };
   
   const gameScale = getGameScale(dimensions.width);
   
-  // Handle Window Resize with Debounce and Logic Updates
+  // Handle Resize
   useEffect(() => {
     const handleResize = () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
         setDimensions({ width, height });
+        isMobileRef.current = width < 768;
         
-        // Ensure player doesn't get stuck off-screen
+        // Safety bounds check for player
         if (playerPos.current) {
             playerPos.current.x = Math.min(Math.max(playerPos.current.x, 20), width - 20);
             playerPos.current.y = Math.min(playerPos.current.y, height - 100); 
         }
     };
     
+    // Throttled resize observer could be better, but native event is okay for now
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize); 
     return () => {
@@ -61,6 +61,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   
   // Input tracking
   const mousePos = useRef<Vector2>({ x: window.innerWidth / 2, y: 0 });
+  // New: Track if input is coming from touch to apply offsets
+  const isTouchInput = useRef<boolean>(false); 
+  
   const isFiring = useRef<boolean>(false);
   const muzzleFlash = useRef<number>(0);
   
@@ -77,10 +80,12 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   const winSequenceStarted = useRef<boolean>(false);
   const timeRef = useRef<number>(0);
 
-  // Initialize Stars - Fewer stars for a cleaner look
+  // Initialize Stars
   useEffect(() => {
     stars.current = [];
-    const starCount = Math.floor((window.innerWidth * window.innerHeight) / 3000); // Reduced density
+    // PERFORMANCE: Cap star count on mobile
+    const density = isMobileRef.current ? 4000 : 3000;
+    const starCount = Math.floor((window.innerWidth * window.innerHeight) / density);
     
     for(let i=0; i<starCount; i++) {
         const depth = Math.pow(Math.random(), 2); 
@@ -88,10 +93,10 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             x: Math.random() * window.innerWidth,
             y: Math.random() * window.innerHeight,
             z: depth * 2.5 + 0.2, 
-            alpha: 0.1 + Math.random() * 0.5 // Lower base alpha
+            alpha: 0.1 + Math.random() * 0.5
         });
     }
-  }, []);
+  }, [dimensions]);
 
   // Initialize Level
   const initLevel = useCallback(() => {
@@ -99,14 +104,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     const newEntities: Entity[] = [];
     const { width, height } = dimensions;
     const scale = getGameScale(width);
-    
-    // Adjusted enemy size calculation
     const enemySize = 75 * scale; 
-
-    // Adjust spawn positions
     const centerX = width / 2;
-    
-    // REVISED SPREAD LOGIC:
     const spreadX = Math.min(width * 0.35, 500 * scale); 
 
     if (!collectedItems.includes(EntityType.ENEMY_ILLUSTRATION)) {
@@ -167,7 +166,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     }
   }, [gameState, initLevel]);
 
-  // Input Handling
+  // Keyboard Input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         keysPressed.current.add(e.code);
@@ -221,15 +220,17 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    // --- HIGH DPI SCALING FIX ---
     const dpr = window.devicePixelRatio || 1;
     canvas.width = dimensions.width * dpr;
     canvas.height = dimensions.height * dpr;
     ctx.scale(dpr, dpr);
-    // ----------------------------
 
-    const createExplosion = (x: number, y: number, color: string, count = 15, speed = 8) => {
+    const createExplosion = (x: number, y: number, color: string, baseCount = 15, speed = 8) => {
         screenShake.current = Math.min(screenShake.current + 8, 25);
+        
+        // PERFORMANCE: Reduce particles on mobile
+        const count = isMobileRef.current ? Math.floor(baseCount * 0.5) : baseCount;
+
         for(let i=0; i<count; i++) {
             const angle = Math.random() * Math.PI * 2;
             const velocity = (Math.random() * speed + 2) * gameScale;
@@ -253,10 +254,28 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         timeRef.current += 1;
         const { width, height } = dimensions;
         
-        // Define safe areas for game logic (keep entities away from edges/UI)
         const SAFE_TOP = 80 * gameScale; 
         const SAFE_BOTTOM = 120 * gameScale; 
         const BASE_PLAYER_Y = height - SAFE_BOTTOM;
+
+        // --- PLAYER MOVEMENT INTERPOLATION ---
+        // UX: Mobile Touch Offset - If touch input, aim slightly above finger so user sees ship
+        const targetY = isTouchInput.current 
+            ? mousePos.current.y - (80 * gameScale) 
+            : mousePos.current.y;
+            
+        // Smoothly lerp towards mouse position for fluid movement
+        const lerpFactor = 0.15; // Smoothness factor
+        playerPos.current.x += (mousePos.current.x - playerPos.current.x) * lerpFactor;
+        
+        // Allow Y movement but bound it strongly near bottom
+        let desiredY = targetY;
+        // Clamp Y to not go too high or too low
+        desiredY = Math.max(height * 0.6, Math.min(desiredY, height - 80));
+        
+        // Apply recoil to Y
+        const recoilY = (muzzleFlash.current > 0) ? 4 * gameScale : 0;
+        playerPos.current.y += (desiredY + recoilY - playerPos.current.y) * 0.1;
 
         // Shake decay
         if (screenShake.current > 0) {
@@ -272,9 +291,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
         if (gameState !== 'PLAYING' && gameState !== 'WIN') return;
 
-        // 1. Turret Aiming
+        // 1. Aiming
         const dx = mousePos.current.x - playerPos.current.x;
-        const dy = mousePos.current.y - playerPos.current.y;
+        const dy = mousePos.current.y - playerPos.current.y; // Aim at actual finger/mouse
         let angle = Math.atan2(dy, dx);
         playerRotation.current = angle + Math.PI / 2;
 
@@ -283,10 +302,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             const now = Date.now();
             if (now - lastShotTime.current > 100) { 
                 const fireAngle = playerRotation.current - Math.PI / 2; 
-                playerPos.current.y = BASE_PLAYER_Y + (4 * gameScale);
                 muzzleFlash.current = 3; 
 
-                // Scale projectile speed and offset
                 const pSpeed = PROJECTILE_SPEED * gameScale;
                 const offset = 30 * gameScale;
 
@@ -310,18 +327,14 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                 lastShotTime.current = now;
             }
         }
-        
-        // Recoil recovery
-        playerPos.current.y += (BASE_PLAYER_Y - playerPos.current.y) * 0.2;
 
         // 3. Stars Logic
         const parallaxX = (mousePos.current.x - width / 2) * 0.05;
 
         stars.current.forEach(star => {
-            star.y += star.z * 0.5 * gameScale; // Much slower stars (was 1.2)
+            star.y += star.z * 0.5 * gameScale;
             star.x -= parallaxX * star.z * 0.05;
 
-            // Screen Wrapping with Dynamic Dimensions
             if (star.y > height) {
                 star.y = -5;
                 star.x = Math.random() * width;
@@ -329,15 +342,17 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             if (star.x < 0) star.x += width;
             if (star.x > width) star.x -= width;
 
-            // Subtle twinkling only
             if (Math.random() < 0.005) {
                 star.alpha = 0.1 + Math.random() * 0.3;
             }
         });
 
-        // 4. Entity Logic
-        entities.current.forEach(entity => {
-            // Update Trail
+        // 4. Entity Logic & Physics
+        // OPTIMIZATION: Use for-loop instead of forEach for better performance on mobile
+        for (let i = 0; i < entities.current.length; i++) {
+            const entity = entities.current[i];
+            
+            // Trail logic
             if (entity.trail) {
                 entity.trail.push({x: entity.position.x, y: entity.position.y});
                 if (entity.trail.length > 8) entity.trail.shift();
@@ -345,134 +360,94 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
             if (entity.hitFlash && entity.hitFlash > 0) entity.hitFlash--;
 
+            // Movement Logic
             if (entity.type === EntityType.PROJECTILE) {
                 entity.position.x += entity.velocity.x;
                 entity.position.y += entity.velocity.y;
             } else if (entity.type.includes('ENEMY')) {
-                const t = timeRef.current;
-                
-                // Dynamic Boundary Checks
-                const boundLeft = 50 * gameScale;
-                const boundRight = width - (50 * gameScale);
-                const boundTop = SAFE_TOP;
-                const boundBottom = height - (200 * gameScale); 
+                // ... (Enemy logic remains mostly same, just optimized execution)
+                 const t = timeRef.current;
+                 const boundLeft = 50 * gameScale;
+                 const boundRight = width - (50 * gameScale);
+                 const boundTop = SAFE_TOP;
+                 const boundBottom = height - (200 * gameScale);
 
-                if (entity.type === EntityType.ENEMY_ILLUSTRATION) {
-                    // BEHAVIOR: Sharper, erratic turns (Dart and Stop)
+                 // ... [Existing Enemy Movement Logic - kept intact for brevity but executed here] ...
+                 if (entity.type === EntityType.ENEMY_ILLUSTRATION) {
                     entity.position.x += entity.velocity.x;
                     entity.position.y += entity.velocity.y;
                     
-                    // Bounce off walls
                     if (entity.position.x <= boundLeft) { entity.position.x = boundLeft; entity.velocity.x *= -1; }
                     if (entity.position.x >= boundRight) { entity.position.x = boundRight; entity.velocity.x *= -1; }
                     if (entity.position.y <= boundTop) { entity.position.y = boundTop; entity.velocity.y *= -1; }
                     if (entity.position.y >= boundBottom) { entity.position.y = boundBottom; entity.velocity.y *= -1; }
 
-                    // Randomized movement changes (increased frequency)
                     if (Math.random() < 0.05) {
-                        // Choice: Sprint or Stop?
                         if (Math.random() < 0.25) {
-                            // "Stop" / Brake
                             entity.velocity.x *= 0.1;
                             entity.velocity.y *= 0.1;
                         } else {
-                            // "Sprint" / Dart
                             const speed = (5 + Math.random() * 5) * gameScale;
-                            // Quantized angles (45 deg) for "robotic" erratic feel
                             const angle = Math.floor(Math.random() * 8) * (Math.PI / 4); 
                             entity.velocity.x = Math.cos(angle) * speed;
                             entity.velocity.y = Math.sin(angle) * speed * 0.5;
                         }
                     }
-                    
-                    // Add some friction so dashes taper off
                     entity.velocity.x *= 0.96;
                     entity.velocity.y *= 0.96;
                     
-                    // Keep it moving slightly
                     const minSpeed = 0.5 * gameScale;
                     if (Math.abs(entity.velocity.x) < minSpeed) entity.velocity.x += (Math.random() - 0.5);
                     if (Math.abs(entity.velocity.y) < minSpeed) entity.velocity.y += (Math.random() - 0.5);
-
                     entity.rotation = Math.sin(t * 0.1) * 0.1 + (entity.velocity.x * 0.05);
 
                 } else if (entity.type === EntityType.ENEMY_MUSIC) {
-                    // BEHAVIOR: Complex sine wave weaving
                     entity.position.x += entity.velocity.x;
-                    
-                    if (entity.position.x <= boundLeft || entity.position.x >= boundRight) {
-                        entity.velocity.x *= -1;
-                    }
-                    
-                    // Composite Wave: Drift + Primary Wave + Jitter
+                    if (entity.position.x <= boundLeft || entity.position.x >= boundRight) entity.velocity.x *= -1;
                     const drift = Math.sin(t * 0.015) * 1.0 * gameScale;
                     const primaryWave = Math.cos(t * 0.05) * 2.5 * gameScale;
                     const secondaryWave = Math.sin(t * 0.12) * 1.2 * gameScale;
-
                     entity.position.y += drift + primaryWave + secondaryWave;
-                    
                     if (entity.position.y < boundTop) entity.position.y = boundTop;
                     if (entity.position.y > boundBottom) entity.position.y = boundBottom;
-
                     entity.rotation = Math.cos(t * 0.05) * 0.2;
 
                 } else if (entity.type === EntityType.ENEMY_BAND) {
-                    // BEHAVIOR: Erratic "Dodging"
-                    
-                    // 1. Check for projectiles nearby to dodge
-                    const detectRadius = 150 * gameScale;
+                    // Logic for Band dodge...
+                     const detectRadius = 150 * gameScale;
                     let dodgeX = 0;
                     let dodgeY = 0;
-
+                    // Note: Optimized search could be added here, but filter is okay for 3 enemies
                     const threats = entities.current.filter(e => 
                         e.type === EntityType.PROJECTILE && 
                         Math.abs(e.position.x - entity.position.x) < detectRadius &&
                         Math.abs(e.position.y - entity.position.y) < detectRadius
                     );
-
                     if (threats.length > 0) {
-                        // Find closest threat
-                        const closest = threats.reduce((prev, curr) => {
-                            const prevDist = Math.hypot(prev.position.x - entity.position.x, prev.position.y - entity.position.y);
-                            const currDist = Math.hypot(curr.position.x - entity.position.x, curr.position.y - entity.position.y);
-                            return prevDist < currDist ? prev : curr;
-                        });
-
-                        // Vector away from threat
+                        const closest = threats[0]; // Simplified: just run from first threat found
                         const angle = Math.atan2(entity.position.y - closest.position.y, entity.position.x - closest.position.x);
-                        // High urgency acceleration
                         const urgency = 1.2 * gameScale;
                         dodgeX = Math.cos(angle) * urgency;
                         dodgeY = Math.sin(angle) * urgency;
                     }
-
-                    // Apply dodge force
                     entity.velocity.x += dodgeX;
                     entity.velocity.y += dodgeY;
-
-                    // Move
                     entity.position.x += entity.velocity.x;
                     entity.position.y += entity.velocity.y;
                     
-                    // Hard Bounds with bounce
                     if (entity.position.x <= boundLeft) { entity.position.x = boundLeft; entity.velocity.x *= -0.8; }
                     if (entity.position.x >= boundRight) { entity.position.x = boundRight; entity.velocity.x *= -0.8; }
                     if (entity.position.y <= boundTop) { entity.position.y = boundTop; entity.velocity.y *= -0.8; }
                     if (entity.position.y >= boundBottom) { entity.position.y = boundBottom; entity.velocity.y *= -0.8; }
 
-                    // Random erratic dashes
                     if (Math.random() < 0.04) {
                         const dashSpeed = (2 + Math.random() * 6) * gameScale;
                         const angle = Math.random() * Math.PI * 2;
                         entity.velocity.x += Math.cos(angle) * dashSpeed;
                         entity.velocity.y += Math.sin(angle) * dashSpeed;
                     }
-
-                    // High Friction (makes movements snappy)
                     entity.velocity.x *= 0.93;
                     entity.velocity.y *= 0.93;
-
-                    // Speed Cap
                     const speed = Math.hypot(entity.velocity.x, entity.velocity.y);
                     const maxSpeed = 10 * gameScale;
                     if (speed > maxSpeed) {
@@ -480,59 +455,78 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                         entity.velocity.x *= scale;
                         entity.velocity.y *= scale;
                     }
-                    
-                    // Maintain minimum jitter
                     if (speed < 0.5 * gameScale) {
                         entity.velocity.x += (Math.random()-0.5);
                         entity.velocity.y += (Math.random()-0.5);
                     }
-
                     const currentRotation = entity.rotation || 0;
                     entity.rotation = currentRotation + (entity.velocity.x * 0.03);
                 }
             }
-        });
+        }
 
-        // 5. Particles Physics
-        particles.current.forEach(p => {
+        // 5. Particles Physics (Optimized loop)
+        for (let i = particles.current.length - 1; i >= 0; i--) {
+            const p = particles.current[i];
             p.position.x += p.velocity.x;
             p.position.y += p.velocity.y;
             p.velocity.x *= 0.92; 
             p.velocity.y *= 0.92;
             p.size *= 0.96; 
             p.health--;
-        });
-        particles.current = particles.current.filter(p => p.health > 0);
+            if (p.health <= 0) {
+                particles.current.splice(i, 1);
+            }
+        }
 
         // 6. Floating Text Physics
-        floatingTexts.current.forEach(txt => {
+        for (let i = floatingTexts.current.length - 1; i >= 0; i--) {
+            const txt = floatingTexts.current[i];
             txt.position.x += txt.velocity.x;
             txt.position.y += txt.velocity.y;
             txt.health--;
             txt.opacity = Math.max(0, txt.health / 30);
-        });
-        floatingTexts.current = floatingTexts.current.filter(t => t.health > 0);
+            if (txt.health <= 0) {
+                floatingTexts.current.splice(i, 1);
+            }
+        }
 
-        // Cleanup offscreen
-        entities.current = entities.current.filter(e => 
-            e.position.x > -100 && e.position.x < width + 100 &&
-            e.position.y > -100 && e.position.y < height + 100 && 
-            e.health > 0
-        );
+        // Cleanup offscreen entities (in reverse to safely splice)
+        for (let i = entities.current.length - 1; i >= 0; i--) {
+            const e = entities.current[i];
+            const isOffscreen = e.position.x < -100 || e.position.x > width + 100 ||
+                                e.position.y < -100 || e.position.y > height + 100;
+            if (isOffscreen || e.health <= 0) {
+                entities.current.splice(i, 1);
+            }
+        }
 
-        // 7. Collision Detection
+        // 7. Collision Detection (Optimized: Avoid array.filter inside loop)
         if (!winSequenceStarted.current) {
-            const projectiles = entities.current.filter(e => e.type === EntityType.PROJECTILE);
-            const enemies = entities.current.filter(e => e.type.includes('ENEMY'));
+            // Identify enemies first
+            const enemiesIndices: number[] = [];
+            for(let i=0; i<entities.current.length; i++) {
+                if(entities.current[i].type.includes('ENEMY')) enemiesIndices.push(i);
+            }
 
-            projectiles.forEach(proj => {
-                enemies.forEach(enemy => {
+            // Iterate projectiles
+            for (let i = entities.current.length - 1; i >= 0; i--) {
+                const proj = entities.current[i];
+                if (proj.type !== EntityType.PROJECTILE) continue;
+
+                let hit = false;
+                for (const enemyIndex of enemiesIndices) {
+                    const enemy = entities.current[enemyIndex];
+                    if (enemy.health <= 0) continue; // Skip already dead in this frame
+
                     const dx = proj.position.x - enemy.position.x;
                     const dy = proj.position.y - enemy.position.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const distSq = dx*dx + dy*dy;
+                    const minDist = enemy.size + proj.size;
 
-                    if (dist < enemy.size + proj.size) {
-                        proj.health = 0; 
+                    if (distSq < minDist * minDist) {
+                        hit = true;
+                        proj.health = 0; // Mark projectile for deletion next frame
                         enemy.health--;
                         enemy.hitFlash = 4;
                         updateCombo();
@@ -540,7 +534,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                         
                         const hitPoints = 303;
                         scoreRef.current += hitPoints;
-                        onScoreUpdate(scoreRef.current); // Sync with UI
+                        onScoreUpdate(scoreRef.current);
                         
                         spawnFloatingText(enemy.position.x, enemy.position.y - (20 * gameScale), `${hitPoints}`, '#fff', gameScale);
 
@@ -548,20 +542,27 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                             createExplosion(enemy.position.x, enemy.position.y, enemy.color, 30, 12);
                             onItemCollected(enemy.type); 
                             onOpenContent(enemy.type);
-                            
                             spawnFloatingText(enemy.position.x, enemy.position.y - (40 * gameScale), "NICE!", enemy.color, gameScale);
                         }
+                        break; // Projectile hits one enemy max
                     }
-                });
-            });
+                }
+                // If projectile hit something, it's effectively dead, will be cleaned up next frame loop
+            }
             
-            const enemiesAlive = entities.current.filter(e => e.type.includes('ENEMY')).length;
+            // Check win condition
+            let enemiesAlive = 0;
+            for(let i=0; i<entities.current.length; i++) {
+                if(entities.current[i].type.includes('ENEMY') && entities.current[i].health > 0) enemiesAlive++;
+            }
+            
             if (enemiesAlive === 0 && !winSequenceStarted.current && scoreRef.current > 0) {
                  if (collectedItems.length === 3) {
                      triggerWinSequence();
                  }
             }
         } else {
+            // Win fireworks
             if (Math.random() < 0.1) {
                  const x = Math.random() * width;
                  const y = Math.random() * (height / 2);
@@ -572,14 +573,13 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     };
 
     const draw = () => {
+        // ... [Draw function largely the same, optimized for readability]
         if (!ctx) return;
         const { width, height } = dimensions;
 
-        // 1. Background
         ctx.fillStyle = '#050308';
         ctx.fillRect(0, 0, width, height);
 
-        // Shake Camera
         ctx.save();
         if (screenShake.current > 0) {
             const dx = (Math.random() - 0.5) * screenShake.current;
@@ -587,18 +587,14 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             ctx.translate(dx, dy);
         }
 
-        // 2. Grid - Dynamic Vanishing Point
-        ctx.lineWidth = 1; // Keep grid lines thin
+        // Draw Grid
         const time = timeRef.current;
-        // Smoother, less distracting color (dark purple/blue instead of pink)
+        ctx.lineWidth = 1; 
         ctx.strokeStyle = 'rgba(124, 58, 237, 0.15)'; 
         ctx.beginPath();
         const vanishingPointY = -height * 0.2; 
         const gridWidth = width * 3;
-        // Increase spacing for less "busy" look
         const gridSpacing = 200 * gameScale; 
-        
-        // Vertical lines
         const centerX = width / 2;
         for (let i = -gridWidth; i <= gridWidth; i += gridSpacing) {
              ctx.moveTo(centerX, vanishingPointY);
@@ -606,15 +602,13 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         }
         ctx.stroke();
 
-        // Horizontal lines scrolling down - SLOWER
-        const speed = 0.5 * gameScale; // Reduced speed significantly
-        const hSpacing = 120 * gameScale; // Wider spacing
+        const speed = 0.5 * gameScale; 
+        const hSpacing = 120 * gameScale; 
         const gridOffset = (time * speed) % hSpacing;
         ctx.beginPath();
         for (let i = 0; i < height; i += hSpacing) {
             const y = i + gridOffset;
             if (y > height) continue;
-            // Smoother fadeout
             const alpha = Math.max(0, (y / height) * 0.2); 
             ctx.strokeStyle = `rgba(124, 58, 237, ${alpha})`;
             ctx.moveTo(0, y);
@@ -622,46 +616,42 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         }
         ctx.stroke();
 
-        // 3. Stars
+        // Draw Stars
         stars.current.forEach(star => {
-            // Darker, less distracting stars
             ctx.fillStyle = `rgba(200, 200, 255, ${star.alpha})`;
-            const size = Math.max(0.8, star.z * 1.5 * gameScale); // Keep stars relatively visible but dim
+            const size = Math.max(0.8, star.z * 1.5 * gameScale);
             ctx.fillRect(star.x, star.y, size, size);
         });
 
-        // 4. Trails
+        // Draw Trails
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         entities.current.forEach(e => {
-            if (e.trail && e.trail.length > 1) {
-                // Projectile Trails
-                if (e.type === EntityType.PROJECTILE) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = e.color;
-                    ctx.lineWidth = e.size;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = e.color;
-                    ctx.moveTo(e.trail[0].x, e.trail[0].y);
-                    for(let i=1; i<e.trail.length; i++) {
-                        ctx.lineTo(e.trail[i].x, e.trail[i].y);
-                    }
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
+            if (e.trail && e.trail.length > 1 && e.type === EntityType.PROJECTILE) {
+                ctx.beginPath();
+                ctx.strokeStyle = e.color;
+                ctx.lineWidth = e.size;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = e.color;
+                ctx.moveTo(e.trail[0].x, e.trail[0].y);
+                for(let i=1; i<e.trail.length; i++) {
+                    ctx.lineTo(e.trail[i].x, e.trail[i].y);
                 }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
         });
 
-        // 5. Entities
+        // Draw Entities
         entities.current.forEach(e => {
             if (e.health <= 0) return; 
 
-            // HOVER LOGIC
+            // Hover check
             let isHovered = false;
-            if (e.type.includes('ENEMY')) {
+            if (e.type.includes('ENEMY') && !isTouchInput.current) { // No hover effects on touch
                 const dx = e.position.x - mousePos.current.x;
                 const dy = e.position.y - mousePos.current.y;
-                const hitRadius = (e.size / 2) + 20; // Generous hit box
+                const hitRadius = (e.size / 2) + 20; 
                 if (dx*dx + dy*dy < hitRadius*hitRadius) {
                     isHovered = true;
                 }
@@ -676,7 +666,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                  ctx.rotate(e.rotation || 0);
                  const offset = e.wobbleOffset || 0;
                  const freq = 20 + (offset % 15);
-                 const amp = 3 * gameScale; // Scale hover amplitude
+                 const amp = 3 * gameScale;
                  const hover = Math.sin(timeRef.current / freq + offset) * amp;
                  ctx.translate(0, hover);
             } else if (e.type === EntityType.PROJECTILE) {
@@ -695,10 +685,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                 const color = isHit ? '#ffffff' : e.color;
                 ctx.strokeStyle = color;
                 
-                // HOVER STYLES
                 if (isHovered && !isHit) {
-                    ctx.lineWidth = 5 * gameScale; // Thicker line
-                    // Intense pulsating glow
+                    ctx.lineWidth = 5 * gameScale;
                     ctx.shadowBlur = 30 + Math.sin(timeRef.current * 0.2) * 15;
                     ctx.shadowColor = color;
                 } else {
@@ -707,15 +695,12 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     ctx.shadowColor = color;
                 }
                 
-                // Draw shapes with relative sizes
                 if (e.type === EntityType.ENEMY_ILLUSTRATION) {
-                    // Pulsing Glow effect
                     if (!isHit) {
                         const pulse = Math.abs(Math.sin(timeRef.current * 0.1)) * 10 * gameScale;
                         ctx.shadowBlur = 10 + pulse;
                         ctx.shadowColor = e.color;
                     }
-                    
                     const radius = e.size / 2;
                     ctx.beginPath();
                     ctx.arc(0, 0, radius, 0, Math.PI * 2);
@@ -732,7 +717,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     const barCount = 5;
                     const step = width / barCount;
                     const startX = -width / 2;
-                    
                     for(let i=0; i<barCount; i++) {
                         const h = (width * 0.3) + Math.random() * (width * 0.3);
                         const x = startX + (i * step) + (step/2);
@@ -741,15 +725,12 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     }
                     ctx.stroke();
                 } else if (e.type === EntityType.ENEMY_BAND) {
-                    // Jitter effect for Band enemy
                     if (!isHit && !winSequenceStarted.current) {
                         const jitter = 1.5 * gameScale;
                         ctx.translate((Math.random() - 0.5) * jitter, (Math.random() - 0.5) * jitter);
                     }
-
                     const s = e.size * 0.4;
                     ctx.beginPath();
-                    // Triangle Shape
                     ctx.moveTo(0, -s);
                     ctx.lineTo(s, s * 0.8);
                     ctx.lineTo(-s, s * 0.8);
@@ -760,7 +741,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                 if (!isHit) {
                     ctx.rotate(-(e.rotation || 0)); 
                     ctx.fillStyle = '#fff';
-                    // Dynamic font size
                     const fontSize = Math.max(10, e.size * 0.25);
                     ctx.font = `${fontSize}px "Press Start 2P"`;
                     ctx.textAlign = 'center';
@@ -775,7 +755,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             ctx.restore();
         });
 
-        // 6. Particles
+        // Draw Particles
         particles.current.forEach(p => {
             ctx.fillStyle = p.color;
             ctx.globalAlpha = p.health / 30;
@@ -785,7 +765,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         });
         ctx.globalAlpha = 1;
 
-        // 7. Floating Texts
+        // Draw Texts
         floatingTexts.current.forEach(txt => {
             if (txt.text) {
                 ctx.save();
@@ -801,15 +781,13 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             }
         });
 
-        // 8. Player Draw - Scaled
+        // Draw Player
         const { x, y } = playerPos.current;
         const idleY = Math.sin(timeRef.current / 20) * (2 * gameScale);
 
         ctx.save();
         ctx.translate(x, y + idleY);
         ctx.rotate(playerRotation.current);
-        
-        // Scale player drawing context
         ctx.scale(gameScale, gameScale);
         
         if (muzzleFlash.current > 0) {
@@ -842,9 +820,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         ctx.lineTo(6, 16);
         ctx.lineTo(-6, 16);
         ctx.fill();
-        
         ctx.shadowBlur = 0;
-        // End player scaling
         ctx.restore();
 
         ctx.restore();
@@ -863,7 +839,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     }
 
     return () => cancelAnimationFrame(frameId.current);
-    // REMOVED 'combo' and 'score' from dependency array to prevent loop restart.
   }, [gameState, onOpenContent, triggerWinSequence, onItemCollected, collectedItems, onScoreUpdate, dimensions, gameScale]);
 
   // Handle Input Mapping
@@ -876,20 +851,24 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
   const handleTouchStart = (e: React.TouchEvent) => {
     isFiring.current = true;
+    isTouchInput.current = true;
     const t = e.touches[0];
     handleUpdateInput(t.clientX, t.clientY);
   };
   const handleTouchEnd = () => { isFiring.current = false; };
   const handleTouchMove = (e: React.TouchEvent) => {
     const t = e.touches[0];
+    isTouchInput.current = true;
     handleUpdateInput(t.clientX, t.clientY);
   };
   const handleMouseDown = (e: React.MouseEvent) => {
       isFiring.current = true;
+      isTouchInput.current = false;
       handleUpdateInput(e.clientX, e.clientY);
   };
   const handleMouseUp = () => { isFiring.current = false; };
   const handleMouseMove = (e: React.MouseEvent) => {
+      isTouchInput.current = false;
       handleUpdateInput(e.clientX, e.clientY);
   };
   const handleMouseLeave = () => { isFiring.current = false; };
@@ -898,7 +877,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
       <canvas
         ref={canvasRef}
-        // Style width/height controls logical size
         style={{ width: dimensions.width, height: dimensions.height }}
         className="block cursor-crosshair active:cursor-crosshair touch-none select-none"
         onTouchStart={handleTouchStart}

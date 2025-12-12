@@ -74,10 +74,10 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
              </div>
           </div>
           
-          {/* Top Right: Menu */}
+          {/* Top Right: Menu Button - Larger Hit Area for Mobile */}
           <button 
             onClick={onToggleMenu}
-            className="pointer-events-auto bg-black/80 backdrop-blur-md border-2 border-white/50 hover:border-cyan-400 hover:text-cyan-400 text-white p-2 md:p-3 shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.5)] transition-all group rounded-lg active:scale-95"
+            className="pointer-events-auto bg-black/80 backdrop-blur-md border-2 border-white/50 hover:border-cyan-400 hover:text-cyan-400 text-white p-3 md:p-3 shadow-lg hover:shadow-[0_0_15px_rgba(34,211,238,0.5)] transition-all group rounded-lg active:scale-95"
             aria-label="Open Menu"
           >
             {isMenuOpen ? <X className="w-6 h-6 md:w-8 md:h-8" /> : <Menu className="w-6 h-6 md:w-8 md:h-8" />}
@@ -85,10 +85,10 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex justify-between items-end">
+        <div className="flex justify-between items-end gap-4">
           {/* Bottom Left: Controls Help */}
-          <div className="bg-black/80 backdrop-blur-md p-2 md:p-3 rounded-lg border-l-4 border-cyan-400 shadow-lg pointer-events-auto">
-             {/* Desktop Controls - Hidden on tablet/mobile */}
+          <div className="bg-black/80 backdrop-blur-md p-2 md:p-3 rounded-lg border-l-4 border-cyan-400 shadow-lg pointer-events-auto shrink-0">
+             {/* Desktop Controls */}
             <div className="hidden lg:flex flex-col gap-1">
                  <div className="flex items-center gap-2 font-pixel text-xs text-cyan-300">
                     <Gamepad2 className="w-4 h-4" /> CONTROLS
@@ -99,24 +99,24 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
             </div>
             {/* Mobile/Tablet Controls Hint - Visible below lg breakpoint */}
             <div className="block lg:hidden">
-                 <div className="font-pixel text-[8px] md:text-[10px] text-cyan-300 animate-pulse">
-                     TAP TO FIRE
+                 <div className="font-pixel text-[10px] text-cyan-300 animate-pulse whitespace-nowrap">
+                     TOUCH & DRAG
                  </div>
             </div>
           </div>
           
-          {/* Bottom Right: Direct Contact Button */}
+          {/* Bottom Right: Direct Contact Button - Enhanced for Touch */}
           <button 
             onClick={() => onOpenContent(EntityType.BOSS_MAIL)}
-            className={`pointer-events-auto flex items-center gap-2 md:gap-3 backdrop-blur-md border-2 px-4 py-2 md:px-6 md:py-3 transition-all group rounded-lg hover:scale-105 active:scale-95 shadow-xl
+            className={`pointer-events-auto flex items-center justify-center gap-2 md:gap-3 backdrop-blur-md border-2 px-5 py-3 md:px-6 md:py-3 transition-all group rounded-lg hover:scale-105 active:scale-95 shadow-xl min-w-[140px] md:min-w-0
                 ${allCollected 
                     ? 'bg-pink-600 border-white hover:bg-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.8)] animate-pulse' 
                     : 'bg-black/80 border-pink-500 hover:border-pink-400 hover:shadow-[0_0_15px_rgba(236,72,153,0.5)]'
                 }`}
           >
              <Mail className={`w-5 h-5 md:w-6 md:h-6 ${allCollected ? 'text-white' : 'text-pink-500 group-hover:text-pink-400 transition-colors'}`} />
-             <span className={`font-pixel text-xs md:text-base ${allCollected ? 'text-white font-bold' : 'text-pink-500 group-hover:text-pink-400 transition-colors'}`}>
-                 {allCollected ? 'CHANNEL OPEN' : 'CONTACT'}
+             <span className={`font-pixel text-xs md:text-base whitespace-nowrap ${allCollected ? 'text-white font-bold' : 'text-pink-500 group-hover:text-pink-400 transition-colors'}`}>
+                 {allCollected ? 'OPEN FOR INQUIRIES' : 'CONTACT'}
              </span>
           </button>
         </div>
@@ -144,7 +144,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
                  <div className="flex flex-col gap-4 w-full max-w-xs relative z-10">
                      <button 
                         onClick={() => onOpenContent(EntityType.BOSS_MAIL)}
-                        className="bg-pink-600 hover:bg-pink-500 text-white font-pixel py-3 md:py-4 px-6 md:px-8 border-4 border-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:scale-105 transition-transform flex items-center justify-center gap-3 text-sm md:text-base"
+                        className="bg-pink-600 hover:bg-pink-500 text-white font-pixel py-4 px-6 md:px-8 border-4 border-white shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:scale-105 transition-transform flex items-center justify-center gap-3 text-sm md:text-base"
                      >
                          <Mail className="w-5 h-5 md:w-6 md:h-6" />
                          SEND LOVE
@@ -152,7 +152,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
                      
                      <button 
                         onClick={onReplay}
-                        className="bg-black hover:bg-white/10 text-cyan-400 font-pixel py-3 px-6 border-2 border-cyan-500/50 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] flex items-center justify-center gap-3 transition-all text-sm md:text-base"
+                        className="bg-black hover:bg-white/10 text-cyan-400 font-pixel py-4 px-6 border-2 border-cyan-500/50 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] flex items-center justify-center gap-3 transition-all text-sm md:text-base"
                      >
                          <RefreshCcw className="w-4 h-4" />
                          REPLAY
@@ -171,7 +171,13 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
             
             <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-white/20 pb-4">
                 <h2 className="font-pixel text-xl md:text-2xl text-lime-400 glitch-effect tracking-widest">SYSTEM MENU</h2>
-                <button onClick={onToggleMenu} className="md:hidden text-lime-400"><X className="w-6 h-6" /></button>
+                <button 
+                    onClick={onToggleMenu} 
+                    className="md:hidden text-lime-400 p-2 -mr-2"
+                    aria-label="Close Menu"
+                >
+                    <X className="w-6 h-6" />
+                </button>
             </div>
             
             <div className="flex flex-col gap-3 md:gap-4">
@@ -179,12 +185,12 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
                 <button
                   key={idx}
                   onClick={item.action}
-                  className="group flex items-center justify-between p-3 md:p-4 border border-white/10 hover:border-white bg-white/5 hover:bg-white/10 transition-all active:scale-[0.98]"
+                  className="group flex items-center justify-between p-4 md:p-4 border border-white/10 hover:border-white bg-white/5 hover:bg-white/10 transition-all active:scale-[0.98] min-h-[60px]"
                 >
-                  <span className={`font-pixel text-xs md:text-base ${item.color} group-hover:translate-x-2 transition-transform tracking-wider`}>
+                  <span className={`font-pixel text-sm md:text-base ${item.color} group-hover:translate-x-2 transition-transform tracking-wider`}>
                     {item.label}
                   </span>
-                  <item.icon className={`w-5 h-5 ${item.color} opacity-70 group-hover:opacity-100 group-hover:shadow-[0_0_10px_currentColor]`} />
+                  <item.icon className={`w-6 h-6 ${item.color} opacity-70 group-hover:opacity-100 group-hover:shadow-[0_0_10px_currentColor]`} />
                 </button>
               ))}
             </div>
