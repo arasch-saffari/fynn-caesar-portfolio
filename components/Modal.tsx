@@ -67,11 +67,12 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
   const getSubtitle = () => {
       if (data.style === 'band') return 'D.I.Y. Acid Folk';
       if (data.style === 'illustration') return 'PSYCHODELIC INK';
+      if (data.style === 'music') return 'INSIGHT FREQUENCIES';
       return 'DATA DECODED';
   };
 
   // Helper to determine if subtitle should be large
-  const isLargeSubtitle = data.style === 'band' || data.style === 'illustration';
+  const isLargeSubtitle = data.style === 'band' || data.style === 'illustration' || data.style === 'music';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300"
