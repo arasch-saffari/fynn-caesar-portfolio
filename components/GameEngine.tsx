@@ -245,7 +245,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             const { width, height } = dimensions;
 
             // --- PLAYER POSITIONING (Fixed Turret Style) ---
-            const FIXED_BOTTOM_OFFSET = 180 * gameScale;
+            const FIXED_BOTTOM_OFFSET = 220 * gameScale;
             const centerX = width / 2;
             const fixedY = height - FIXED_BOTTOM_OFFSET;
 
