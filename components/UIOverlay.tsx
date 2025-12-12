@@ -71,7 +71,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
              
              {/* The Numbers - Gradient Fill & Bold */}
              <div className="font-pixel text-3xl md:text-5xl tracking-widest leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-pink-200 to-pink-600" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.1)' }}>
-                 {score.toString().padStart(6, '0')}
+                 {score.toString().padStart(4, '0')}
              </div>
           </div>
           

@@ -478,6 +478,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                         createExplosion(proj.position.x, proj.position.y, '#fff', 5, 5);
                         
                         const damage = 100 * (combo || 1);
+                        setScore(s => s + damage);
                         spawnFloatingText(enemy.position.x, enemy.position.y - (20 * gameScale), `${damage}`, '#fff', gameScale);
 
                         if (enemy.health <= 0) {
@@ -654,14 +655,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     ctx.lineTo(s, s * 0.7);
                     ctx.closePath();
                     ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(0, -s * 0.3, s * 0.3, 0, Math.PI*2);
-                    if (!isHit) {
-                        ctx.fillStyle = color;
-                        ctx.fill();
-                    } else {
-                        ctx.stroke();
-                    }
+                    // Removed the inner dot (circle) from the triangle target (Band Enemy)
                 }
 
                 if (!isHit) {
