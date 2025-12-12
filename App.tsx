@@ -39,7 +39,24 @@ const App: React.FC = () => {
   };
 
   const handleCloseModal = () => {
-    setGameState('PLAYING');
+    // Check win condition
+    const hasIllustration = collectedItems.includes(EntityType.ENEMY_ILLUSTRATION);
+    const hasMusic = collectedItems.includes(EntityType.ENEMY_MUSIC);
+    const hasBand = collectedItems.includes(EntityType.ENEMY_BAND);
+    const allCollected = hasIllustration && hasMusic && hasBand;
+
+    if (allCollected) {
+        // LOGIC FIX:
+        // If we are closing the Contact/Boss Mail modal (e.g. from "Send Love"), go to System Menu.
+        // If we are closing a regular item modal (just finished the game), go to Win Screen.
+        if (activeContent === EntityType.BOSS_MAIL) {
+             setGameState('MENU_OPEN');
+        } else {
+             setGameState('WIN');
+        }
+    } else {
+        setGameState('PLAYING');
+    }
     setActiveContent(null);
   };
   
@@ -52,7 +69,17 @@ const App: React.FC = () => {
 
   const handleToggleMenu = () => {
     if (gameState === 'MENU_OPEN') {
-      setGameState(previousState);
+      // If we toggle menu off, check if we should go back to WIN/Menu loop or Playing
+      const hasIllustration = collectedItems.includes(EntityType.ENEMY_ILLUSTRATION);
+      const hasMusic = collectedItems.includes(EntityType.ENEMY_MUSIC);
+      const hasBand = collectedItems.includes(EntityType.ENEMY_BAND);
+      const allCollected = hasIllustration && hasMusic && hasBand;
+
+      if (allCollected) {
+           setGameState('WIN'); 
+      } else {
+           setGameState(previousState);
+      }
     } else {
       setPreviousState(gameState);
       setGameState('MENU_OPEN');

@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Target, Gamepad2, Zap, LockOpen } from 'lucide-react';
+import { Target, Gamepad2, Heart, LockOpen } from 'lucide-react';
 
 interface IntroScreenProps {
   onStart: () => void;
 }
 
-// Minimal Pixel Art SVGs
-const Alien1 = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 11 8" className={className} fill="currentColor">
-    <path d="M2 0h7v1H2V0zm-1 1h1v1H1V1zm9 0h1v1h-1V1zM0 2h1v1H0V2zm10 0h1v1h-1V2zM0 3h3v2H0V3zm8 0h3v2H8V3zM3 3h1v1H3V3zm4 0h1v1H7V3zm-4 2h1v1H3V5zm4 0h1v1H7V5zm-4 1h1v1H2V6zm1 0h1v1H3V6zm3 0h1v1H7V6zm-2 0h1v1H5V6zm3 0h1v1H8V6zm-7 1h1v1H1V7zm8 0h1v1H9V7z" />
+// --- PIXEL ART ASSETS (16x16 Grid) ---
+// shapeRendering="crispEdges" ensures hard pixel boundaries without anti-aliasing
+
+const PixelSmiley = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
+    {/* Base Circle */}
+    <path d="M5 1h6v1h2v2h1v2h1v4h-1v2h-1v2h-2v1h-6v-1h-2v-2h-1v-2h-1v-4h1v-2h1v-2h2v-1z" />
+    {/* Eyes (Holes) */}
+    <path d="M5 5h2v3h-2zM9 5h2v3h-2z" fill="black" />
+    {/* Mouth (Hole) */}
+    <path d="M4 10h1v1h1v1h4v-1h1v-1h1v2h-1v1h-1v1h-4v-1h-1v-1h-1v-2h1z" fill="black" />
   </svg>
 );
 
-const HeartPixel = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 10 9" className={className} fill="currentColor">
-    <path d="M2 0h2v1h2V0h2v1h1v2h1v3H9v1H8v1H7v1H5v-1H4v-1H3v-1H1V6H0V3h1V1h1V0z" />
+const PixelHeart = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
+    {/* Classic Pixel Heart Shape */}
+    <path d="M3 4h4v1h2V4h4v4h-1v2h-1v2h-1v1h-2v1H8v-1H6v-1H5v-2H4v-2H3V4z" />
+  </svg>
+);
+
+const PixelEye = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
+    {/* Eye White Shape */}
+    <path d="M2 8h1v-1h1v-1h2v-1h4v1h2v1h1v1h1v1h-1v1h-1v1h-2v1h-4v-1h-2v-1h-1v-1h-1z" />
+    {/* Iris (Hole) */}
+    <path d="M6 6h4v4h-4z" fill="black" />
+    {/* Pupil (Island) */}
+    <path d="M7 7h2v2h-2z" />
   </svg>
 );
 
@@ -22,22 +41,29 @@ const PatternRow = ({
   Icon, 
   color, 
   direction = 'left', 
-  speed = 'duration-[20s]' 
+  speed = 'duration-[20s]',
+  opacity = 'opacity-100'
 }: { 
   Icon: React.FC<{className?: string}>, 
   color: string, 
   direction?: 'left' | 'right',
-  speed?: string
+  speed?: string,
+  opacity?: string
 }) => {
-  const items = Array.from({ length: 20 }); 
+  // Increased count to 50 for safety with smaller items
+  const items = Array.from({ length: 50 }); 
+  
   return (
-    <div className="flex w-full overflow-hidden py-4 opacity-40 hover:opacity-100 transition-opacity duration-500">
-      <div className={`flex shrink-0 gap-12 ${direction === 'left' ? 'animate-scroll-left' : 'animate-scroll-right'} ${speed}`}>
+    <div className={`flex w-full overflow-hidden py-3 md:py-6 ${opacity} hover:opacity-100 transition-opacity duration-1000 ease-in-out`}>
+      {/* Significantly reduced gap for a tighter pattern that doesn't feel huge */}
+      <div className={`flex shrink-0 gap-6 md:gap-12 ${direction === 'left' ? 'animate-scroll-left' : 'animate-scroll-right'} ${speed}`}>
         {items.map((_, i) => (
-          <Icon key={i} className={`w-12 h-12 md:w-16 md:h-16 ${color} drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]`} />
+          // Reduced icon size for desktop (md:w-8 instead of 12)
+          <Icon key={i} className={`w-8 h-8 md:w-10 md:h-10 ${color}`} />
         ))}
+        {/* Duplicate for seamless loop */}
         {items.map((_, i) => (
-          <Icon key={`dup-${i}`} className={`w-12 h-12 md:w-16 md:h-16 ${color} drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]`} />
+          <Icon key={`dup-${i}`} className={`w-8 h-8 md:w-10 md:h-10 ${color}`} />
         ))}
       </div>
     </div>
@@ -64,92 +90,118 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
   }, [onStart, showButton]);
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black overflow-hidden">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black overflow-hidden h-[100dvh]">
       
       {/* Dynamic Background */}
-      <div className="absolute inset-0 flex flex-col justify-center items-center opacity-30 select-none pointer-events-none">
-         <div className="w-[120%] -rotate-6 scale-110 flex flex-col gap-8">
-            <PatternRow Icon={HeartPixel} color="text-pink-500" direction="left" speed="duration-[30s]" />
-            <PatternRow Icon={Alien1} color="text-purple-400" direction="right" speed="duration-[25s]" />
-            <PatternRow Icon={HeartPixel} color="text-red-500" direction="left" speed="duration-[28s]" />
+      <div className="absolute inset-0 flex flex-col justify-center items-center select-none pointer-events-none overflow-hidden">
+         {/* Tilted Container - Reduced width and removed scale-110 to fix zoom feel */}
+         <div className="w-[120%] -rotate-[6deg] flex flex-col gap-6 md:gap-12 origin-center">
+            
+            {/* Row 1: Acid Smileys (Slow Left) */}
+            <PatternRow 
+                Icon={PixelSmiley} 
+                color="text-yellow-400" 
+                direction="left" 
+                speed="duration-[120s]" 
+                opacity="opacity-20"
+            />
+            
+            {/* Row 2: Pixel Hearts (Medium Right) */}
+            <PatternRow 
+                Icon={PixelHeart} 
+                color="text-pink-500" 
+                direction="right" 
+                speed="duration-[90s]" 
+                opacity="opacity-25"
+            />
+            
+            {/* Row 3: Mystic Eyes (Slow Left) */}
+            <PatternRow 
+                Icon={PixelEye} 
+                color="text-purple-400" 
+                direction="left" 
+                speed="duration-[140s]" 
+                opacity="opacity-20"
+            />
          </div>
       </div>
       
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none"></div>
+      {/* Vignette Overlay to focus center */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_100%)] pointer-events-none"></div>
 
-      <div className="relative z-10 flex flex-col items-center gap-6 md:gap-12 p-4 w-full max-w-4xl">
+      <div className="relative z-10 flex flex-col items-center gap-6 md:gap-10 p-4 w-full max-w-5xl h-full justify-center">
         
-        {/* Main Title Block - Stacked Layout */}
-        <div className="flex flex-col items-center justify-center w-full mix-blend-screen">
+        {/* Main Title Block - Stacked Layout - Adjusted Text Sizes */}
+        <div className="flex flex-col items-center justify-center w-full mix-blend-screen shrink-0">
           <h1 className="flex flex-col items-center leading-[0.85] tracking-tighter">
-            {/* Top Line */}
+            {/* Top Line - MASSIVELY INCREASED */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-pink-300 via-white to-pink-500 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]">
               FYNN
             </span>
-            {/* Bottom Line */}
+            {/* Bottom Line - MASSIVELY INCREASED */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-t from-pink-500 via-white to-pink-300 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]" style={{ animationDelay: '0.5s' }}>
               CAESAR
             </span>
           </h1>
-          <span className="block text-pink-300 mt-6 tracking-[0.5em] font-terminal text-lg md:text-2xl uppercase opacity-80">
+          <span className="block text-pink-300 mt-6 md:mt-8 tracking-[0.3em] md:tracking-[0.6em] font-terminal text-xl md:text-3xl uppercase opacity-80 font-bold">
               Spread The Love
           </span>
         </div>
 
         {/* Gamified Mission Instructions - Mechanics Focused */}
-        <div className="flex flex-col gap-4 bg-pink-950/40 border-2 border-pink-500/30 p-4 md:p-8 backdrop-blur-md w-full animate-in slide-in-from-bottom-10 fade-in duration-1000 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-            <div className="text-center font-terminal text-pink-200 text-lg md:text-2xl tracking-widest border-b border-pink-500/30 pb-3 mb-2 uppercase">
+        <div className="flex flex-col gap-6 bg-pink-950/40 border-2 border-pink-500/30 p-6 md:p-8 backdrop-blur-md w-full animate-in slide-in-from-bottom-10 fade-in duration-1000 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] max-w-3xl">
+            <div className="text-center font-terminal text-pink-200 text-lg md:text-2xl tracking-widest border-b border-pink-500/30 pb-4 mb-2 uppercase">
                 // SYSTEM INSTRUCTIONS
             </div>
             
             {/* Instructions Grid */}
-            <div className="grid grid-cols-3 gap-4 text-center items-start">
-                {/* Step 1: Aim (Updated from Dodge) */}
-                <div className="flex flex-col items-center gap-3 group">
-                    <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
-                        <Gamepad2 className="w-6 h-6 md:w-8 md:h-8 text-cyan-400 group-hover:scale-110 transition-transform animate-pulse" />
+            <div className="grid grid-cols-3 gap-4 md:gap-8 text-center items-start">
+                {/* Step 1: Aim */}
+                <div className="flex flex-col items-center gap-3 md:gap-4 group">
+                    <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
+                        <Gamepad2 className="w-6 h-6 md:w-10 md:h-10 text-cyan-400 group-hover:scale-110 transition-transform animate-pulse" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">AIM & LOOK</span>
-                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">MOUSE / TOUCH</span>
+                        <span className="font-pixel text-[10px] md:text-sm text-white mb-2">AIM & LOOK</span>
+                        <span className="font-terminal text-[10px] md:text-sm text-white/50 hidden sm:block">MOUSE / TOUCH</span>
                     </div>
                 </div>
 
-                {/* Step 2: Shoot (Clarified controls) */}
-                <div className="flex flex-col items-center gap-3 group">
-                    <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
-                        <Zap className="w-6 h-6 md:w-8 md:h-8 text-pink-500 fill-current group-hover:scale-110 transition-transform animate-bounce" />
+                {/* Step 2: Shoot */}
+                <div className="flex flex-col items-center gap-3 md:gap-4 group">
+                    <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
+                        <Heart className="w-6 h-6 md:w-10 md:h-10 text-pink-500 fill-current group-hover:scale-110 transition-transform animate-pulse" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">SEND LOVE</span>
-                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">CLICK / SPACE</span>
+                        <span className="font-pixel text-[10px] md:text-sm text-white mb-2">SEND LOVE</span>
+                        <span className="font-terminal text-[10px] md:text-sm text-white/50 hidden sm:block">CLICK / SPACE</span>
                     </div>
                 </div>
 
                 {/* Step 3: Unlock */}
-                <div className="flex flex-col items-center gap-3 group">
-                     <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
-                        <LockOpen className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 group-hover:scale-110 transition-transform" />
+                <div className="flex flex-col items-center gap-3 md:gap-4 group">
+                     <div className="w-12 h-12 md:w-20 md:h-20 flex items-center justify-center bg-black/40 rounded-full border border-pink-500/20 group-hover:border-pink-500/80 transition-colors">
+                        <LockOpen className="w-6 h-6 md:w-10 md:h-10 text-yellow-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-pixel text-[9px] md:text-xs text-white mb-1">UNLOCK MEMORIES</span>
-                        <span className="font-terminal text-[10px] md:text-xs text-white/50 hidden sm:block">DISCOVER PROJECTS</span>
+                        <span className="font-pixel text-[10px] md:text-sm text-white mb-2">UNLOCK MEMORIES</span>
+                        <span className="font-terminal text-[10px] md:text-sm text-white/50 hidden sm:block">DISCOVER PROJECTS</span>
                     </div>
                 </div>
             </div>
         </div>
 
         {/* Start Button */}
-        <div className={`transition-all duration-1000 ${showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className={`transition-all duration-1000 shrink-0 ${showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <button
             onClick={onStart}
-            className="group relative px-10 py-5 md:px-16 md:py-6 bg-black border-2 border-pink-500 hover:border-pink-300 transition-all overflow-hidden rounded-full shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)]"
+            className="group relative px-10 py-6 md:px-24 md:py-8 bg-black border-2 border-pink-500 hover:border-pink-300 transition-all overflow-hidden rounded-full shadow-[0_0_20px_rgba(236,72,153,0.3)] hover:shadow-[0_0_40px_rgba(236,72,153,0.6)]"
           >
             <div className="absolute inset-0 bg-pink-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left mix-blend-overlay"></div>
             
             <div className="relative flex flex-col items-center gap-2">
-                <span className="flex items-center gap-3 text-lg md:text-2xl font-pixel text-white group-hover:text-white transition-colors">
-                <Target className="w-5 h-5 md:w-6 md:h-6 fill-current animate-pulse" />
+                <span className="flex items-center gap-4 text-xl md:text-3xl font-pixel text-white group-hover:text-white transition-colors">
+                <Target className="w-6 h-6 md:w-8 md:h-8 fill-current animate-pulse" />
                 START EXPERIENCE
                 </span>
             </div>
