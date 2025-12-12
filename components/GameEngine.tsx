@@ -477,15 +477,15 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                         updateCombo();
                         createExplosion(proj.position.x, proj.position.y, '#fff', 5, 5);
                         
-                        const damage = 100 * (combo || 1);
-                        setScore(s => s + damage);
-                        spawnFloatingText(enemy.position.x, enemy.position.y - (20 * gameScale), `${damage}`, '#fff', gameScale);
+                        const hitPoints = 303;
+                        setScore(s => s + hitPoints);
+                        spawnFloatingText(enemy.position.x, enemy.position.y - (20 * gameScale), `${hitPoints}`, '#fff', gameScale);
 
                         if (enemy.health <= 0) {
                             createExplosion(enemy.position.x, enemy.position.y, enemy.color, 30, 12);
                             onItemCollected(enemy.type); 
                             onOpenContent(enemy.type);
-                            setScore(s => s + 1000 * (combo || 1));
+                            // REMOVED: setScore(s => s + 1000 * (combo || 1));
                             spawnFloatingText(enemy.position.x, enemy.position.y - (40 * gameScale), "NICE!", enemy.color, gameScale);
                         }
                     }
