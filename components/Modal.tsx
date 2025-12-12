@@ -212,7 +212,8 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                 </>
             ) : (
                 <>
-                    <p className={`font-terminal text-base md:text-xl leading-relaxed ${accentColor} text-center max-w-md drop-shadow-sm`}>
+                    {/* Increased font size, weight, line-height and max-width for better readability */}
+                    <p className={`font-terminal text-xl md:text-3xl leading-snug tracking-wide font-bold ${accentColor} text-center max-w-2xl drop-shadow-md`}>
                         {data.description}
                     </p>
                     <div className="flex flex-col w-full gap-3 mt-2 relative z-10 pb-4">

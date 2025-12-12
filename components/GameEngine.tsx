@@ -369,32 +369,58 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                 const boundBottom = height - (200 * gameScale); 
 
                 if (entity.type === EntityType.ENEMY_ILLUSTRATION) {
+                    // BEHAVIOR: Sharper, erratic turns (Dart and Stop)
                     entity.position.x += entity.velocity.x;
                     entity.position.y += entity.velocity.y;
                     
-                    if (entity.position.x <= boundLeft) entity.velocity.x = Math.abs(entity.velocity.x);
-                    if (entity.position.x >= boundRight) entity.velocity.x = -Math.abs(entity.velocity.x);
-                    if (entity.position.y <= boundTop) entity.velocity.y = Math.abs(entity.velocity.y);
-                    if (entity.position.y >= boundBottom) entity.velocity.y = -Math.abs(entity.velocity.y);
+                    // Bounce off walls
+                    if (entity.position.x <= boundLeft) { entity.position.x = boundLeft; entity.velocity.x *= -1; }
+                    if (entity.position.x >= boundRight) { entity.position.x = boundRight; entity.velocity.x *= -1; }
+                    if (entity.position.y <= boundTop) { entity.position.y = boundTop; entity.velocity.y *= -1; }
+                    if (entity.position.y >= boundBottom) { entity.position.y = boundBottom; entity.velocity.y *= -1; }
 
-                    if (Math.random() < 0.02) {
-                        const speed = (2 + Math.random() * 2) * gameScale;
-                        const angle = Math.floor(Math.random() * 8) * (Math.PI / 4); 
-                        entity.velocity.x = Math.cos(angle) * speed;
-                        entity.velocity.y = Math.sin(angle) * speed * 0.5;
+                    // Randomized movement changes (increased frequency)
+                    if (Math.random() < 0.05) {
+                        // Choice: Sprint or Stop?
+                        if (Math.random() < 0.25) {
+                            // "Stop" / Brake
+                            entity.velocity.x *= 0.1;
+                            entity.velocity.y *= 0.1;
+                        } else {
+                            // "Sprint" / Dart
+                            const speed = (5 + Math.random() * 5) * gameScale;
+                            // Quantized angles (45 deg) for "robotic" erratic feel
+                            const angle = Math.floor(Math.random() * 8) * (Math.PI / 4); 
+                            entity.velocity.x = Math.cos(angle) * speed;
+                            entity.velocity.y = Math.sin(angle) * speed * 0.5;
+                        }
                     }
+                    
+                    // Add some friction so dashes taper off
+                    entity.velocity.x *= 0.96;
+                    entity.velocity.y *= 0.96;
+                    
+                    // Keep it moving slightly
+                    const minSpeed = 0.5 * gameScale;
+                    if (Math.abs(entity.velocity.x) < minSpeed) entity.velocity.x += (Math.random() - 0.5);
+                    if (Math.abs(entity.velocity.y) < minSpeed) entity.velocity.y += (Math.random() - 0.5);
+
                     entity.rotation = Math.sin(t * 0.1) * 0.1 + (entity.velocity.x * 0.05);
 
                 } else if (entity.type === EntityType.ENEMY_MUSIC) {
+                    // BEHAVIOR: Complex sine wave weaving
                     entity.position.x += entity.velocity.x;
                     
                     if (entity.position.x <= boundLeft || entity.position.x >= boundRight) {
                         entity.velocity.x *= -1;
                     }
                     
-                    const drift = Math.sin(t * 0.01) * 0.5 * gameScale;
-                    const wave = Math.cos(t * 0.08) * 2.5 * gameScale;
-                    entity.position.y += drift + wave;
+                    // Composite Wave: Drift + Primary Wave + Jitter
+                    const drift = Math.sin(t * 0.015) * 1.0 * gameScale;
+                    const primaryWave = Math.cos(t * 0.05) * 2.5 * gameScale;
+                    const secondaryWave = Math.sin(t * 0.12) * 1.2 * gameScale;
+
+                    entity.position.y += drift + primaryWave + secondaryWave;
                     
                     if (entity.position.y < boundTop) entity.position.y = boundTop;
                     if (entity.position.y > boundBottom) entity.position.y = boundBottom;
@@ -402,32 +428,78 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     entity.rotation = Math.cos(t * 0.05) * 0.2;
 
                 } else if (entity.type === EntityType.ENEMY_BAND) {
+                    // BEHAVIOR: Erratic "Dodging"
+                    
+                    // 1. Check for projectiles nearby to dodge
+                    const detectRadius = 150 * gameScale;
+                    let dodgeX = 0;
+                    let dodgeY = 0;
+
+                    const threats = entities.current.filter(e => 
+                        e.type === EntityType.PROJECTILE && 
+                        Math.abs(e.position.x - entity.position.x) < detectRadius &&
+                        Math.abs(e.position.y - entity.position.y) < detectRadius
+                    );
+
+                    if (threats.length > 0) {
+                        // Find closest threat
+                        const closest = threats.reduce((prev, curr) => {
+                            const prevDist = Math.hypot(prev.position.x - entity.position.x, prev.position.y - entity.position.y);
+                            const currDist = Math.hypot(curr.position.x - entity.position.x, curr.position.y - entity.position.y);
+                            return prevDist < currDist ? prev : curr;
+                        });
+
+                        // Vector away from threat
+                        const angle = Math.atan2(entity.position.y - closest.position.y, entity.position.x - closest.position.x);
+                        // High urgency acceleration
+                        const urgency = 1.2 * gameScale;
+                        dodgeX = Math.cos(angle) * urgency;
+                        dodgeY = Math.sin(angle) * urgency;
+                    }
+
+                    // Apply dodge force
+                    entity.velocity.x += dodgeX;
+                    entity.velocity.y += dodgeY;
+
+                    // Move
                     entity.position.x += entity.velocity.x;
                     entity.position.y += entity.velocity.y;
                     
-                    if (entity.position.x <= boundLeft || entity.position.x >= boundRight) entity.velocity.x *= -1;
-                    if (entity.position.y <= boundTop || entity.position.y >= boundBottom) entity.velocity.y *= -1;
+                    // Hard Bounds with bounce
+                    if (entity.position.x <= boundLeft) { entity.position.x = boundLeft; entity.velocity.x *= -0.8; }
+                    if (entity.position.x >= boundRight) { entity.position.x = boundRight; entity.velocity.x *= -0.8; }
+                    if (entity.position.y <= boundTop) { entity.position.y = boundTop; entity.velocity.y *= -0.8; }
+                    if (entity.position.y >= boundBottom) { entity.position.y = boundBottom; entity.velocity.y *= -0.8; }
 
-                    if (Math.random() < 0.03) {
-                        const dashSpeed = (4 + Math.random() * 4) * gameScale;
+                    // Random erratic dashes
+                    if (Math.random() < 0.04) {
+                        const dashSpeed = (2 + Math.random() * 6) * gameScale;
                         const angle = Math.random() * Math.PI * 2;
                         entity.velocity.x += Math.cos(angle) * dashSpeed;
                         entity.velocity.y += Math.sin(angle) * dashSpeed;
                     }
 
-                    const maxSpeed = 3.5 * gameScale;
-                    const speed = Math.sqrt(entity.velocity.x**2 + entity.velocity.y**2);
+                    // High Friction (makes movements snappy)
+                    entity.velocity.x *= 0.93;
+                    entity.velocity.y *= 0.93;
+
+                    // Speed Cap
+                    const speed = Math.hypot(entity.velocity.x, entity.velocity.y);
+                    const maxSpeed = 10 * gameScale;
                     if (speed > maxSpeed) {
-                        entity.velocity.x *= 0.95;
-                        entity.velocity.y *= 0.95;
-                    } else if (speed < (1 * gameScale)) {
-                         entity.velocity.x *= 1.1;
-                         entity.velocity.y *= 1.1;
+                        const scale = maxSpeed / speed;
+                        entity.velocity.x *= scale;
+                        entity.velocity.y *= scale;
                     }
                     
-                    // FIXED: Handle optional rotation correctly for TypeScript strict mode
+                    // Maintain minimum jitter
+                    if (speed < 0.5 * gameScale) {
+                        entity.velocity.x += (Math.random()-0.5);
+                        entity.velocity.y += (Math.random()-0.5);
+                    }
+
                     const currentRotation = entity.rotation || 0;
-                    entity.rotation = currentRotation + (Math.random() - 0.5) * 0.1;
+                    entity.rotation = currentRotation + (entity.velocity.x * 0.03);
                 }
             }
         });
@@ -589,6 +661,17 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         // 5. Entities
         entities.current.forEach(e => {
             if (e.health <= 0) return; 
+
+            // HOVER LOGIC
+            let isHovered = false;
+            if (e.type.includes('ENEMY')) {
+                const dx = e.position.x - mousePos.current.x;
+                const dy = e.position.y - mousePos.current.y;
+                const hitRadius = (e.size / 2) + 20; // Generous hit box
+                if (dx*dx + dy*dy < hitRadius*hitRadius) {
+                    isHovered = true;
+                }
+            }
             
             ctx.save();
             ctx.translate(e.position.x, e.position.y);
@@ -617,9 +700,18 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             } else {
                 const color = isHit ? '#ffffff' : e.color;
                 ctx.strokeStyle = color;
-                ctx.lineWidth = 3 * gameScale; // Scale lines
-                ctx.shadowBlur = isHit ? 20 : 15;
-                ctx.shadowColor = color;
+                
+                // HOVER STYLES
+                if (isHovered && !isHit) {
+                    ctx.lineWidth = 5 * gameScale; // Thicker line
+                    // Intense pulsating glow
+                    ctx.shadowBlur = 30 + Math.sin(timeRef.current * 0.2) * 15;
+                    ctx.shadowColor = color;
+                } else {
+                    ctx.lineWidth = 3 * gameScale; 
+                    ctx.shadowBlur = isHit ? 20 : 15;
+                    ctx.shadowColor = color;
+                }
                 
                 // Draw shapes with relative sizes
                 if (e.type === EntityType.ENEMY_ILLUSTRATION) {
