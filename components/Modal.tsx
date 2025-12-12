@@ -88,8 +88,8 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                 <h2 className={`text-lg md:text-3xl text-center glitch-effect ${textColor} mb-2 uppercase tracking-widest font-bold`}>
                 {data.title}
                 </h2>
-                <div className={`text-[10px] font-terminal uppercase tracking-[0.5em] ${accentColor} opacity-70`}>
-                    DATA DECODED
+                <div className={`font-terminal uppercase ${accentColor} ${data.style === 'band' ? 'text-sm md:text-xl tracking-[0.2em] font-bold mt-1' : 'text-[10px] tracking-[0.5em] opacity-70'}`}>
+                    {data.style === 'band' ? 'D.I.Y. Acid Folk' : 'DATA DECODED'}
                 </div>
             </div>
              <div className="w-full h-0.5 bg-current opacity-50 mt-4" />
