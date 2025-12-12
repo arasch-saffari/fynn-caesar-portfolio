@@ -19,7 +19,7 @@ export const CONTENT_MAP: Record<string, ContentData> = {
   },
   [EntityType.ENEMY_MUSIC]: {
     title: "MUSIC",
-    description: "Solo Sonic Explorations. Beats from the void.",
+    description: "Solo Sonic Explorations.\nBeats from the void.",
     style: "music",
     links: [
       { label: "INSTAGRAM", url: "https://www.instagram.com/insight_frequencies/" },
@@ -28,7 +28,7 @@ export const CONTENT_MAP: Record<string, ContentData> = {
   },
   [EntityType.ENEMY_BAND]: {
     title: "SATIVA IM EXIL",
-    description: "Illusion Respektive. The Duo Project.",
+    description: "Illusion Respektive.\nThe Duo Project.",
     style: "band",
     links: [
       { label: "INSTAGRAM", url: "https://www.instagram.com/sativa.im.exil/?hl=de" },

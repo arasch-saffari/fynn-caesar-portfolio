@@ -162,7 +162,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                     
                     <div className="flex flex-col gap-4 items-center w-full">
                         <div className="text-center space-y-2">
-                             <p className="font-pixel text-white text-xs md:text-base tracking-wider">CHANNEL OPEN FOR INQUIRIES</p>
+                             <p className="font-pixel text-white text-xs md:text-base tracking-wider">OPEN FOR INQUIRIES</p>
                              <p className="font-terminal text-pink-300 text-sm md:text-lg tracking-widest">BOOKING // COLLABORATIONS // COMMISSIONS</p>
                         </div>
                         
@@ -214,7 +214,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
             ) : (
                 <>
                     {/* Increased font size, weight, line-height and max-width for better readability */}
-                    <p className={`font-terminal text-xl md:text-3xl leading-snug tracking-wide font-bold ${accentColor} text-center max-w-2xl drop-shadow-md`}>
+                    <p className={`font-terminal text-xl md:text-3xl leading-snug tracking-wide font-bold ${accentColor} text-center max-w-2xl drop-shadow-md whitespace-pre-line`}>
                         {data.description}
                     </p>
                     <div className="flex flex-col w-full gap-3 mt-2 relative z-10 pb-4">
