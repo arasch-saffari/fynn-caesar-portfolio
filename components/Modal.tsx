@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ContentData } from '../types';
-import { X, ExternalLink, Mail, Copy, Check, PlayCircle } from 'lucide-react';
+import { IMPRESSUM_TEXT, DATENSCHUTZ_TEXT } from '../constants';
+import { X, ExternalLink, Mail, Copy, Check, PlayCircle, Scale, Shield } from 'lucide-react';
 
 interface ModalProps {
   data: ContentData;
@@ -9,15 +10,20 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
   const [copied, setCopied] = useState(false);
+  const [activeLegalDoc, setActiveLegalDoc] = useState<'impressum' | 'privacy' | null>(null);
 
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (activeLegalDoc) {
+          setActiveLegalDoc(null); // Close legal modal first if open
+      } else if (e.key === 'Escape') {
+          onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, activeLegalDoc]);
 
   // Determine colors based on style
   let borderColor = 'border-white';
@@ -74,13 +80,47 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
   // Helper to determine if subtitle should be large
   const isLargeSubtitle = data.style === 'band' || data.style === 'illustration' || data.style === 'music';
 
+  // If a legal document is active, show the Legal Overlay instead/on top
+  if (activeLegalDoc) {
+      const legalText = activeLegalDoc === 'impressum' ? IMPRESSUM_TEXT : DATENSCHUTZ_TEXT;
+      const legalTitle = activeLegalDoc === 'impressum' ? 'IMPRESSUM' : 'DATENSCHUTZ';
+      
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300"
+             style={{
+                 paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+                 paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
+             }}>
+             <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col border-2 border-white bg-black shadow-[0_0_50px_rgba(255,255,255,0.2)] font-pixel overflow-hidden">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/30 bg-gray-900/50">
+                    <h2 className="text-white text-lg md:text-xl tracking-widest">{legalTitle}</h2>
+                    <button 
+                        onClick={() => setActiveLegalDoc(null)}
+                        className="p-1 hover:bg-white/20 rounded transition-colors"
+                    >
+                        <X className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="overflow-y-auto p-6 text-gray-300 font-terminal text-sm md:text-base whitespace-pre-wrap leading-relaxed">
+                    {legalText}
+                </div>
+             </div>
+        </div>
+      );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300"
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95 duration-300"
          style={{
              paddingTop: 'calc(1rem + env(safe-area-inset-top))',
              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
          }}>
-      <div className={`relative w-full max-w-lg max-h-[90vh] flex flex-col border-4 ${borderColor} ${bgColor} shadow-[0_0_50px_rgba(0,0,0,0.8)] font-pixel overflow-hidden rounded-sm`}>
+         
+      <div className={`relative w-full max-w-lg max-h-[90vh] flex flex-col border-4 ${borderColor} ${bgColor} shadow-[0_0_50px_rgba(0,0,0,0.8)] font-pixel overflow-hidden rounded-sm mb-4`}>
         
         {/* Scanline decoration inside modal */}
         <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px]" />
@@ -145,6 +185,24 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                         <p className={`font-terminal text-xs h-4 ${copied ? 'text-green-400' : 'text-transparent'} transition-colors`}>
                             ADDRESS COPIED TO CLIPBOARD
                         </p>
+                    </div>
+
+                    {/* Legal Buttons inside content - Simplified Visibility */}
+                    <div className="flex flex-wrap gap-4 md:gap-6 mt-4 pt-4 border-t border-pink-500/30 w-full justify-center">
+                        <button 
+                            onClick={() => setActiveLegalDoc('impressum')}
+                            className="group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:text-pink-300 transition-colors uppercase tracking-widest"
+                        >
+                            <Scale className="w-3 h-3" />
+                            <span className="group-hover:underline underline-offset-4">Impressum</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveLegalDoc('privacy')}
+                            className="group flex items-center gap-2 text-[10px] md:text-xs font-terminal text-gray-400 hover:text-pink-300 transition-colors uppercase tracking-widest"
+                        >
+                            <Shield className="w-3 h-3" />
+                            <span className="group-hover:underline underline-offset-4">Datenschutz</span>
+                        </button>
                     </div>
                 </>
             ) : (
