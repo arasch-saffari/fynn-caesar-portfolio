@@ -19,19 +19,13 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   const [combo, setCombo] = useState(0);
   
   // Calculate a scale factor for the game world based on width
-  // REVISED: Drastically reduced desktop scaling to fix "zoomed in" / "undefined" look.
-  // Mobile (< 600px) remains strictly at 0.8 as requested.
   const getGameScale = (w: number) => {
       if (w < 600) return 0.8; // Mobile: DO NOT CHANGE
       
       // Desktop/Tablet:
-      // Reset to 1.0 base scale for crispness.
-      // Only scale up very slightly for very large screens (> 1440px)
       if (w < 1440) return 1.0;
       
       // Very gentle scaling for large screens:
-      // At 1920px: 1.0 + (480 / 3000) ~= 1.16
-      // Much better than previous ~2.0+
       return 1.0 + (w - 1440) / 3000; 
   };
   
@@ -116,9 +110,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     const centerX = width / 2;
     
     // REVISED SPREAD LOGIC:
-    // Ensure enemies stay within viewport.
-    // Use 35% of width instead of 60% (which pushed them offscreen).
-    // Clamp to a max pixel value for desktop aesthetics.
     const spreadX = Math.min(width * 0.35, 500 * scale); 
 
     if (!collectedItems.includes(EntityType.ENEMY_ILLUSTRATION)) {
@@ -349,6 +340,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
         // 4. Entity Logic
         entities.current.forEach(entity => {
+            // Update Trail
             if (entity.trail) {
                 entity.trail.push({x: entity.position.x, y: entity.position.y});
                 if (entity.trail.length > 8) entity.trail.shift();
@@ -643,18 +635,21 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         entities.current.forEach(e => {
-            if (e.type === EntityType.PROJECTILE && e.trail && e.trail.length > 1) {
-                ctx.beginPath();
-                ctx.strokeStyle = e.color;
-                ctx.lineWidth = e.size;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = e.color;
-                ctx.moveTo(e.trail[0].x, e.trail[0].y);
-                for(let i=1; i<e.trail.length; i++) {
-                    ctx.lineTo(e.trail[i].x, e.trail[i].y);
+            if (e.trail && e.trail.length > 1) {
+                // Projectile Trails
+                if (e.type === EntityType.PROJECTILE) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = e.color;
+                    ctx.lineWidth = e.size;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = e.color;
+                    ctx.moveTo(e.trail[0].x, e.trail[0].y);
+                    for(let i=1; i<e.trail.length; i++) {
+                        ctx.lineTo(e.trail[i].x, e.trail[i].y);
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
                 }
-                ctx.stroke();
-                ctx.shadowBlur = 0;
             }
         });
 
@@ -715,6 +710,13 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                 
                 // Draw shapes with relative sizes
                 if (e.type === EntityType.ENEMY_ILLUSTRATION) {
+                    // Pulsing Glow effect
+                    if (!isHit) {
+                        const pulse = Math.abs(Math.sin(timeRef.current * 0.1)) * 10 * gameScale;
+                        ctx.shadowBlur = 10 + pulse;
+                        ctx.shadowColor = e.color;
+                    }
+                    
                     const radius = e.size / 2;
                     ctx.beginPath();
                     ctx.arc(0, 0, radius, 0, Math.PI * 2);
@@ -740,14 +742,20 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     }
                     ctx.stroke();
                 } else if (e.type === EntityType.ENEMY_BAND) {
+                    // Jitter effect for Band enemy
+                    if (!isHit && !winSequenceStarted.current) {
+                        const jitter = 1.5 * gameScale;
+                        ctx.translate((Math.random() - 0.5) * jitter, (Math.random() - 0.5) * jitter);
+                    }
+
                     const s = e.size * 0.4;
                     ctx.beginPath();
-                    ctx.moveTo(-s, s * 0.7);
-                    ctx.lineTo(0, -s);
-                    ctx.lineTo(s, s * 0.7);
+                    // Triangle Shape
+                    ctx.moveTo(0, -s);
+                    ctx.lineTo(s, s * 0.8);
+                    ctx.lineTo(-s, s * 0.8);
                     ctx.closePath();
                     ctx.stroke();
-                    // Removed the inner dot (circle) from the triangle target (Band Enemy)
                 }
 
                 if (!isHit) {
