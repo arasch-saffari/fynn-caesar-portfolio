@@ -33,7 +33,8 @@ export const CONTENT_MAP: Record<string, ContentData> = {
     links: [
       { label: "INSTAGRAM", url: "https://www.instagram.com/sativa.im.exil/?hl=de" },
       { label: "BANDCAMP", url: "https://sativaimexil.bandcamp.com/album/illusion-respektive" },
-      { label: "SPOTIFY", url: "https://open.spotify.com/intl-de/artist/1INpSDJvTFEeAICSF2XMAo" }
+      { label: "SPOTIFY", url: "https://open.spotify.com/intl-de/artist/1INpSDJvTFEeAICSF2XMAo" },
+      { label: "DUBLAB.DE RADIO", url: "https://dublab.de/shows/latente-hypnosen/" }
     ]
   },
   [EntityType.BOSS_MAIL]: {
