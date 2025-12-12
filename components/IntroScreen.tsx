@@ -6,34 +6,23 @@ interface IntroScreenProps {
 }
 
 // --- PIXEL ART ASSETS (16x16 Grid) ---
-// shapeRendering="crispEdges" ensures hard pixel boundaries without anti-aliasing
+// Enhanced with more details and better definition
 
 const PixelSmiley = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
-    {/* Base Circle */}
-    <path d="M5 1h6v1h2v2h1v2h1v4h-1v2h-1v2h-2v1h-6v-1h-2v-2h-1v-2h-1v-4h1v-2h1v-2h2v-1z" />
-    {/* Eyes (Holes) */}
-    <path d="M5 5h2v3h-2zM9 5h2v3h-2z" fill="black" />
-    {/* Mouth (Hole) */}
-    <path d="M4 10h1v1h1v1h4v-1h1v-1h1v2h-1v1h-1v1h-4v-1h-1v-1h-1v-2h1z" fill="black" />
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges">
+    <path fillRule="evenodd" clipRule="evenodd" d="M6 1H10V2H12V3H13V4H14V6H15V10H14V12H13V13H12V14H10V15H6V14H4V13H3V12H2V10H1V6H2V4H3V3H4V2H6V1ZM5 5H7V7H5V5ZM9 5H11V7H9V5ZM4 10H5V11H6V12H10V11H11V10H12V11H11V12H10V13H6V12H5V11H4V10Z" />
   </svg>
 );
 
 const PixelHeart = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
-    {/* Classic Pixel Heart Shape */}
-    <path d="M3 4h4v1h2V4h4v4h-1v2h-1v2h-1v1h-2v1H8v-1H6v-1H5v-2H4v-2H3V4z" />
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges">
+    <path fillRule="evenodd" clipRule="evenodd" d="M8 3H6V2H3V5H2V8H3V10H4V11H5V12H6V13H7V14H8V15H9V14H10V13H11V12H12V11H13V10H14V8H15V5H14V2H11V3H10V4H8V3ZM11 5H13V7H11V5Z" />
   </svg>
 );
 
 const PixelEye = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges" fillRule="evenodd">
-    {/* Eye White Shape */}
-    <path d="M2 8h1v-1h1v-1h2v-1h4v1h2v1h1v1h1v1h-1v1h-1v1h-2v1h-4v-1h-2v-1h-1v-1h-1z" />
-    {/* Iris (Hole) */}
-    <path d="M6 6h4v4h-4z" fill="black" />
-    {/* Pupil (Island) */}
-    <path d="M7 7h2v2h-2z" />
+  <svg viewBox="0 0 16 16" className={className} fill="currentColor" shapeRendering="crispEdges">
+    <path fillRule="evenodd" clipRule="evenodd" d="M2 8L3 6L5 4L8 3L11 4L13 6L14 8L13 10L11 12L8 13L5 12L3 10L2 8ZM8 5L6 8L8 11L10 8L8 5ZM8 7V9H9V7H8Z" />
   </svg>
 );
 
@@ -50,20 +39,19 @@ const PatternRow = ({
   speed?: string,
   opacity?: string
 }) => {
-  // Increased count to 50 for safety with smaller items
-  const items = Array.from({ length: 50 }); 
+  // Increased count to ensure coverage on large screens with tighter gaps
+  const items = Array.from({ length: 80 }); 
   
   return (
-    <div className={`flex w-full overflow-hidden py-3 md:py-6 ${opacity} hover:opacity-100 transition-opacity duration-1000 ease-in-out`}>
-      {/* Significantly reduced gap for a tighter pattern that doesn't feel huge */}
-      <div className={`flex shrink-0 gap-6 md:gap-12 ${direction === 'left' ? 'animate-scroll-left' : 'animate-scroll-right'} ${speed}`}>
+    <div className={`flex w-full overflow-hidden py-2 md:py-4 ${opacity} hover:opacity-100 transition-opacity duration-1000 ease-in-out`}>
+      {/* Reduced gap for a denser, more cohesive pattern */}
+      <div className={`flex shrink-0 gap-4 md:gap-8 ${direction === 'left' ? 'animate-scroll-left' : 'animate-scroll-right'} ${speed}`}>
         {items.map((_, i) => (
-          // Reduced icon size for desktop (md:w-8 instead of 12)
-          <Icon key={i} className={`w-8 h-8 md:w-10 md:h-10 ${color}`} />
+          <Icon key={i} className={`w-6 h-6 md:w-8 md:h-8 ${color}`} />
         ))}
         {/* Duplicate for seamless loop */}
         {items.map((_, i) => (
-          <Icon key={`dup-${i}`} className={`w-8 h-8 md:w-10 md:h-10 ${color}`} />
+          <Icon key={`dup-${i}`} className={`w-6 h-6 md:w-8 md:h-8 ${color}`} />
         ))}
       </div>
     </div>
@@ -94,34 +82,34 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
       
       {/* Dynamic Background */}
       <div className="absolute inset-0 flex flex-col justify-center items-center select-none pointer-events-none overflow-hidden">
-         {/* Tilted Container - Reduced width and removed scale-110 to fix zoom feel */}
-         <div className="w-[120%] -rotate-[6deg] flex flex-col gap-6 md:gap-12 origin-center">
+         {/* Tilted Container */}
+         <div className="w-[120%] -rotate-[6deg] flex flex-col gap-4 md:gap-8 origin-center">
             
-            {/* Row 1: Acid Smileys (Slow Left) */}
+            {/* Row 1: Acid Smileys (Fast Left) */}
             <PatternRow 
                 Icon={PixelSmiley} 
                 color="text-yellow-400" 
                 direction="left" 
-                speed="duration-[120s]" 
-                opacity="opacity-20"
+                speed="duration-[60s]" 
+                opacity="opacity-30"
             />
             
-            {/* Row 2: Pixel Hearts (Medium Right) */}
+            {/* Row 2: Pixel Hearts (Slow Right) */}
             <PatternRow 
                 Icon={PixelHeart} 
                 color="text-pink-500" 
                 direction="right" 
-                speed="duration-[90s]" 
-                opacity="opacity-25"
+                speed="duration-[100s]" 
+                opacity="opacity-40"
             />
             
-            {/* Row 3: Mystic Eyes (Slow Left) */}
+            {/* Row 3: Mystic Eyes (Medium Left) */}
             <PatternRow 
                 Icon={PixelEye} 
                 color="text-purple-400" 
                 direction="left" 
-                speed="duration-[140s]" 
-                opacity="opacity-20"
+                speed="duration-[80s]" 
+                opacity="opacity-30"
             />
          </div>
       </div>
@@ -134,11 +122,11 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onStart }) => {
         {/* Main Title Block - Stacked Layout - Adjusted Text Sizes */}
         <div className="flex flex-col items-center justify-center w-full mix-blend-screen shrink-0">
           <h1 className="flex flex-col items-center leading-[0.85] tracking-tighter">
-            {/* Top Line - MASSIVELY INCREASED */}
+            {/* Top Line */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-pink-300 via-white to-pink-500 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]">
               FYNN
             </span>
-            {/* Bottom Line - MASSIVELY INCREASED */}
+            {/* Bottom Line */}
             <span className="font-pixel text-[13vw] sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-t from-pink-500 via-white to-pink-300 animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]" style={{ animationDelay: '0.5s' }}>
               CAESAR
             </span>
