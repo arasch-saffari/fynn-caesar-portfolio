@@ -38,15 +38,8 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         const height = window.innerHeight;
         setDimensions({ width, height });
         isMobileRef.current = width < 768;
-        
-        // Safety bounds check for player
-        if (playerPos.current) {
-            playerPos.current.x = Math.min(Math.max(playerPos.current.x, 20), width - 20);
-            playerPos.current.y = Math.min(playerPos.current.y, height - 100); 
-        }
     };
     
-    // Throttled resize observer could be better, but native event is okay for now
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize); 
     return () => {
@@ -61,7 +54,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   
   // Input tracking
   const mousePos = useRef<Vector2>({ x: window.innerWidth / 2, y: 0 });
-  // New: Track if input is coming from touch to apply offsets
   const isTouchInput = useRef<boolean>(false); 
   
   const isFiring = useRef<boolean>(false);
@@ -83,7 +75,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
   // Initialize Stars
   useEffect(() => {
     stars.current = [];
-    // PERFORMANCE: Cap star count on mobile
     const density = isMobileRef.current ? 4000 : 3000;
     const starCount = Math.floor((window.innerWidth * window.innerHeight) / density);
     
@@ -228,7 +219,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     const createExplosion = (x: number, y: number, color: string, baseCount = 15, speed = 8) => {
         screenShake.current = Math.min(screenShake.current + 8, 25);
         
-        // PERFORMANCE: Reduce particles on mobile
         const count = isMobileRef.current ? Math.floor(baseCount * 0.5) : baseCount;
 
         for(let i=0; i<count; i++) {
@@ -254,30 +244,16 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         timeRef.current += 1;
         const { width, height } = dimensions;
         
-        const SAFE_TOP = 80 * gameScale; 
-        const SAFE_BOTTOM = 120 * gameScale; 
-        const BASE_PLAYER_Y = height - SAFE_BOTTOM;
+        // --- PLAYER POSITIONING (Fixed Turret Style) ---
+        const FIXED_BOTTOM_OFFSET = 100 * gameScale;
+        const centerX = width / 2;
+        const fixedY = height - FIXED_BOTTOM_OFFSET;
 
-        // --- PLAYER MOVEMENT INTERPOLATION ---
-        // UX: Mobile Touch Offset - If touch input, aim slightly above finger so user sees ship
-        const targetY = isTouchInput.current 
-            ? mousePos.current.y - (80 * gameScale) 
-            : mousePos.current.y;
-            
-        // Smoothly lerp towards mouse position for fluid movement
-        const lerpFactor = 0.15; // Smoothness factor
-        playerPos.current.x += (mousePos.current.x - playerPos.current.x) * lerpFactor;
+        playerPos.current.x = centerX;
         
-        // Allow Y movement but bound it strongly near bottom
-        let desiredY = targetY;
-        // Clamp Y to not go too high or too low
-        desiredY = Math.max(height * 0.6, Math.min(desiredY, height - 80));
-        
-        // Apply recoil to Y
         const recoilY = (muzzleFlash.current > 0) ? 4 * gameScale : 0;
-        playerPos.current.y += (desiredY + recoilY - playerPos.current.y) * 0.1;
+        playerPos.current.y = fixedY + recoilY;
 
-        // Shake decay
         if (screenShake.current > 0) {
             screenShake.current *= 0.9;
             if (screenShake.current < 0.5) screenShake.current = 0;
@@ -291,9 +267,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
         if (gameState !== 'PLAYING' && gameState !== 'WIN') return;
 
-        // 1. Aiming
+        // 1. Aiming Logic
         const dx = mousePos.current.x - playerPos.current.x;
-        const dy = mousePos.current.y - playerPos.current.y; // Aim at actual finger/mouse
+        const dy = mousePos.current.y - playerPos.current.y;
         let angle = Math.atan2(dy, dx);
         playerRotation.current = angle + Math.PI / 2;
 
@@ -348,11 +324,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
         });
 
         // 4. Entity Logic & Physics
-        // OPTIMIZATION: Use for-loop instead of forEach for better performance on mobile
         for (let i = 0; i < entities.current.length; i++) {
             const entity = entities.current[i];
             
-            // Trail logic
             if (entity.trail) {
                 entity.trail.push({x: entity.position.x, y: entity.position.y});
                 if (entity.trail.length > 8) entity.trail.shift();
@@ -360,19 +334,17 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
             if (entity.hitFlash && entity.hitFlash > 0) entity.hitFlash--;
 
-            // Movement Logic
             if (entity.type === EntityType.PROJECTILE) {
                 entity.position.x += entity.velocity.x;
                 entity.position.y += entity.velocity.y;
             } else if (entity.type.includes('ENEMY')) {
-                // ... (Enemy logic remains mostly same, just optimized execution)
                  const t = timeRef.current;
+                 const SAFE_TOP = 80 * gameScale; 
                  const boundLeft = 50 * gameScale;
                  const boundRight = width - (50 * gameScale);
                  const boundTop = SAFE_TOP;
                  const boundBottom = height - (200 * gameScale);
 
-                 // ... [Existing Enemy Movement Logic - kept intact for brevity but executed here] ...
                  if (entity.type === EntityType.ENEMY_ILLUSTRATION) {
                     entity.position.x += entity.velocity.x;
                     entity.position.y += entity.velocity.y;
@@ -413,18 +385,16 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     entity.rotation = Math.cos(t * 0.05) * 0.2;
 
                 } else if (entity.type === EntityType.ENEMY_BAND) {
-                    // Logic for Band dodge...
                      const detectRadius = 150 * gameScale;
                     let dodgeX = 0;
                     let dodgeY = 0;
-                    // Note: Optimized search could be added here, but filter is okay for 3 enemies
                     const threats = entities.current.filter(e => 
                         e.type === EntityType.PROJECTILE && 
                         Math.abs(e.position.x - entity.position.x) < detectRadius &&
                         Math.abs(e.position.y - entity.position.y) < detectRadius
                     );
                     if (threats.length > 0) {
-                        const closest = threats[0]; // Simplified: just run from first threat found
+                        const closest = threats[0];
                         const angle = Math.atan2(entity.position.y - closest.position.y, entity.position.x - closest.position.x);
                         const urgency = 1.2 * gameScale;
                         dodgeX = Math.cos(angle) * urgency;
@@ -465,7 +435,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             }
         }
 
-        // 5. Particles Physics (Optimized loop)
+        // 5. Particles Physics
         for (let i = particles.current.length - 1; i >= 0; i--) {
             const p = particles.current[i];
             p.position.x += p.velocity.x;
@@ -491,7 +461,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             }
         }
 
-        // Cleanup offscreen entities (in reverse to safely splice)
+        // Cleanup offscreen entities
         for (let i = entities.current.length - 1; i >= 0; i--) {
             const e = entities.current[i];
             const isOffscreen = e.position.x < -100 || e.position.x > width + 100 ||
@@ -501,23 +471,20 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
             }
         }
 
-        // 7. Collision Detection (Optimized: Avoid array.filter inside loop)
+        // 7. Collision Detection
         if (!winSequenceStarted.current) {
-            // Identify enemies first
             const enemiesIndices: number[] = [];
             for(let i=0; i<entities.current.length; i++) {
                 if(entities.current[i].type.includes('ENEMY')) enemiesIndices.push(i);
             }
 
-            // Iterate projectiles
             for (let i = entities.current.length - 1; i >= 0; i--) {
                 const proj = entities.current[i];
                 if (proj.type !== EntityType.PROJECTILE) continue;
 
-                let hit = false;
                 for (const enemyIndex of enemiesIndices) {
                     const enemy = entities.current[enemyIndex];
-                    if (enemy.health <= 0) continue; // Skip already dead in this frame
+                    if (enemy.health <= 0) continue; 
 
                     const dx = proj.position.x - enemy.position.x;
                     const dy = proj.position.y - enemy.position.y;
@@ -525,8 +492,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                     const minDist = enemy.size + proj.size;
 
                     if (distSq < minDist * minDist) {
-                        hit = true;
-                        proj.health = 0; // Mark projectile for deletion next frame
+                        proj.health = 0; 
                         enemy.health--;
                         enemy.hitFlash = 4;
                         updateCombo();
@@ -544,10 +510,9 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
                             onOpenContent(enemy.type);
                             spawnFloatingText(enemy.position.x, enemy.position.y - (40 * gameScale), "NICE!", enemy.color, gameScale);
                         }
-                        break; // Projectile hits one enemy max
+                        break;
                     }
                 }
-                // If projectile hit something, it's effectively dead, will be cleaned up next frame loop
             }
             
             // Check win condition
@@ -573,7 +538,6 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
     };
 
     const draw = () => {
-        // ... [Draw function largely the same, optimized for readability]
         if (!ctx) return;
         const { width, height } = dimensions;
 
@@ -648,7 +612,7 @@ const GameEngine: React.FC<GameEngineProps> = ({ setGameState, gameState, onOpen
 
             // Hover check
             let isHovered = false;
-            if (e.type.includes('ENEMY') && !isTouchInput.current) { // No hover effects on touch
+            if (e.type.includes('ENEMY') && !isTouchInput.current) { 
                 const dx = e.position.x - mousePos.current.x;
                 const dy = e.position.y - mousePos.current.y;
                 const hitRadius = (e.size / 2) + 20; 
