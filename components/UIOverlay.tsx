@@ -88,8 +88,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
         <div className="flex justify-between items-end">
           {/* Bottom Left: Controls Help */}
           <div className="bg-black/80 backdrop-blur-md p-2 md:p-3 rounded-lg border-l-4 border-cyan-400 shadow-lg pointer-events-auto">
-             {/* Desktop Controls */}
-            <div className="hidden md:flex flex-col gap-1">
+             {/* Desktop Controls - Hidden on tablet/mobile */}
+            <div className="hidden lg:flex flex-col gap-1">
                  <div className="flex items-center gap-2 font-pixel text-xs text-cyan-300">
                     <Gamepad2 className="w-4 h-4" /> CONTROLS
                  </div>
@@ -97,8 +97,8 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
                     MOUSE = AIM <br/> SPACE/CLICK = FIRE
                  </div>
             </div>
-            {/* Mobile Controls Hint */}
-            <div className="block md:hidden">
+            {/* Mobile/Tablet Controls Hint - Visible below lg breakpoint */}
+            <div className="block lg:hidden">
                  <div className="font-pixel text-[8px] md:text-[10px] text-cyan-300 animate-pulse">
                      TAP TO FIRE
                  </div>

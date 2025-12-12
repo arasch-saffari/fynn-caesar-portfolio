@@ -166,13 +166,14 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                              <p className="font-terminal text-pink-300 text-sm md:text-lg tracking-widest">BOOKING // COLLABORATIONS // COMMISSIONS</p>
                         </div>
                         
-                        <div className="flex w-full max-w-sm gap-2">
+                        {/* Email & Copy Button - Responsive Container */}
+                        <div className="flex w-full gap-2">
                             {/* Mail Link */}
                             <a 
                                 href={`mailto:${data.description}`}
-                                className={`flex-1 p-4 border-2 ${borderColor} bg-black/50 hover:bg-pink-500 hover:text-white transition-all text-center flex items-center justify-center cursor-pointer hover:shadow-[0_0_20px_rgba(236,72,153,0.6)] group`}
+                                className={`flex-1 min-w-0 p-4 border-2 ${borderColor} bg-black/50 hover:bg-pink-500 hover:text-white transition-all text-center flex items-center justify-center cursor-pointer hover:shadow-[0_0_20px_rgba(236,72,153,0.6)] group`}
                             >
-                                <span className="font-terminal text-lg md:text-3xl lg:text-4xl font-bold text-pink-300 group-hover:text-white tracking-wider truncate">
+                                <span className="font-terminal text-lg md:text-2xl lg:text-3xl font-bold text-pink-300 group-hover:text-white tracking-wider truncate max-w-full block">
                                     {data.description}
                                 </span>
                             </a>
