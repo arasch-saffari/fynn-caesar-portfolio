@@ -33,12 +33,23 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isWin, onReplay]);
 
+  // Close menu on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+          onToggleMenu();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen, onToggleMenu]);
+
 
   const menuItems = [
     { label: 'RESUME GAME', icon: Gamepad2, action: onToggleMenu, color: 'text-white' },
-    { label: 'ILLUSTRATION', icon: Palette, action: () => onOpenContent(EntityType.ENEMY_ILLUSTRATION), color: 'text-lime-400' },
     { label: 'MUSIC', icon: Headphones, action: () => onOpenContent(EntityType.ENEMY_MUSIC), color: 'text-fuchsia-400' },
     { label: 'BAND PROJECT', icon: Users, action: () => onOpenContent(EntityType.ENEMY_BAND), color: 'text-yellow-400' },
+    { label: 'ILLUSTRATION', icon: Palette, action: () => onOpenContent(EntityType.ENEMY_ILLUSTRATION), color: 'text-lime-400' },
     { label: 'CONTACT', icon: Mail, action: () => onOpenContent(EntityType.BOSS_MAIL), color: 'text-pink-500' },
   ];
 
@@ -173,7 +184,7 @@ const UIOverlay: React.FC<UIOverlayProps> = ({ gameState, collectedItems, score,
                 <h2 className="font-pixel text-xl md:text-2xl text-lime-400 glitch-effect tracking-widest">SYSTEM MENU</h2>
                 <button 
                     onClick={onToggleMenu} 
-                    className="md:hidden text-lime-400 p-2 -mr-2"
+                    className="text-lime-400 p-2 -mr-2 hover:text-white transition-colors"
                     aria-label="Close Menu"
                 >
                     <X className="w-6 h-6" />
