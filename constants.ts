@@ -38,7 +38,7 @@ export const CONTENT_MAP: Record<string, ContentData> = {
   },
   [EntityType.BOSS_MAIL]: {
     title: "STAY IN TOUCH",
-    description: "booking@fynn-caesar.com",
+    description: "hello@fynn-caesar.com",
     style: "contact",
     links: []
   }

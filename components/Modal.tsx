@@ -64,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
   }
 
   const handleCopy = () => {
-      navigator.clipboard.writeText("booking@fynn-caesar.com");
+      navigator.clipboard.writeText(data.description);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
   };
@@ -74,11 +74,12 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
       if (data.style === 'band') return 'D.I.Y. Acid Folk';
       if (data.style === 'illustration') return 'PSYCHODELIC INK';
       if (data.style === 'music') return 'INSIGHT FREQUENCIES';
+      if (data.style === 'contact') return 'BE CONNECTED';
       return 'DATA DECODED';
   };
 
   // Helper to determine if subtitle should be large
-  const isLargeSubtitle = data.style === 'band' || data.style === 'illustration' || data.style === 'music';
+  const isLargeSubtitle = data.style === 'band' || data.style === 'illustration' || data.style === 'music' || data.style === 'contact';
 
   // If a legal document is active, show the Legal Overlay instead/on top
   if (activeLegalDoc) {
@@ -158,7 +159,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                     <div className="flex flex-col gap-4 items-center w-full">
                         <div className="text-center space-y-2">
                              <p className="font-pixel text-white text-xs md:text-base">CHANNEL OPEN FOR INQUIRIES</p>
-                             <p className="font-terminal text-gray-400 text-xs">BOOKING // COLLABORATIONS // COMMISSIONS</p>
+                             <p className="font-terminal text-gray-400 text-sm md:text-lg">BOOKING // COLLABORATIONS // COMMISSIONS</p>
                         </div>
                         
                         <div className="flex w-full max-w-sm gap-2">
@@ -167,7 +168,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                                 href={`mailto:${data.description}`}
                                 className="flex-1 p-4 border-2 border-pink-500 bg-black/50 hover:bg-pink-500 hover:text-white transition-all text-center flex items-center justify-center cursor-pointer hover:shadow-[0_0_20px_rgba(236,72,153,0.4)] group"
                             >
-                                <span className="font-terminal text-sm md:text-xl text-pink-300 group-hover:text-white tracking-wider truncate">
+                                <span className="font-terminal text-lg md:text-3xl lg:text-4xl font-bold text-pink-300 group-hover:text-white tracking-wider truncate">
                                     {data.description}
                                 </span>
                             </a>
@@ -178,7 +179,7 @@ const Modal: React.FC<ModalProps> = ({ data, onClose }) => {
                                 className="shrink-0 p-4 border-2 border-pink-500 bg-black/50 hover:bg-pink-500 hover:text-white transition-all flex items-center justify-center cursor-pointer"
                                 title="Copy to clipboard"
                             >
-                                {copied ? <Check className="w-5 h-5 text-green-400 bg-white rounded-full p-0.5" /> : <Copy className="w-5 h-5 text-pink-300 hover:text-white" />}
+                                {copied ? <Check className="w-5 h-5 md:w-6 md:h-6 text-green-400 bg-white rounded-full p-0.5" /> : <Copy className="w-5 h-5 md:w-6 md:h-6 text-pink-300 hover:text-white" />}
                             </button>
                         </div>
                         
